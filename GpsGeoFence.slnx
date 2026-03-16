@@ -1,3 +1,5 @@
 <Solution>
-  <Project Path="GpsGeoFence.csproj" />
+  <Project Path="GpsGeoFence.csproj">
+    <Deploy Solution="Debug|*" />
+  </Project>
 </Solution>

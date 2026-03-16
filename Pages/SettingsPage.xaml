@@ -1,0 +1,243 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    x:Class="GpsGeoFence.Pages.SettingsPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:vm="clr-namespace:GpsGeoFence.ViewModels"
+    x:DataType="vm:SettingsViewModel"
+    Title="Cài đặt">
+
+    <ContentPage.Resources>
+        <Style x:Key="GroupHeader" TargetType="Label">
+            <Setter Property="FontSize"       Value="12"/>
+            <Setter Property="FontAttributes" Value="Bold"/>
+            <Setter Property="TextColor"      Value="#2196F3"/>
+            <Setter Property="TextTransform"  Value="Uppercase"/>
+            <Setter Property="Margin"         Value="16,20,16,6"/>
+        </Style>
+        <Style x:Key="SettingRow" TargetType="Border">
+            <Setter Property="BackgroundColor"
+                    Value="{AppThemeBinding Light=White, Dark=#1E1E1E}"/>
+            <Setter Property="Stroke"         Value="Transparent"/>
+            <Setter Property="Padding"        Value="16,12"/>
+            <Setter Property="Margin"         Value="0,0,0,1"/>
+        </Style>
+        <Style x:Key="RowLabel" TargetType="Label">
+            <Setter Property="FontSize"   Value="15"/>
+            <Setter Property="TextColor"
+                    Value="{AppThemeBinding Light=#1A1A1A, Dark=White}"/>
+            <Setter Property="VerticalOptions" Value="Center"/>
+        </Style>
+        <Style x:Key="RowSubLabel" TargetType="Label">
+            <Setter Property="FontSize"  Value="12"/>
+            <Setter Property="TextColor" Value="#888"/>
+        </Style>
+    </ContentPage.Resources>
+
+    <ScrollView>
+        <VerticalStackLayout
+            BackgroundColor="{AppThemeBinding Light=#F5F5F5, Dark=#121212}"
+            Spacing="0">
+
+            <!-- ══ GPS SETTINGS ══ -->
+            <Label Style="{StaticResource GroupHeader}" Text="GPS"/>
+
+            <Border Style="{StaticResource SettingRow}">
+                <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto">
+                    <Label Grid.Row="0" Grid.Column="0"
+                           Style="{StaticResource RowLabel}"
+                           Text="Tần suất cập nhật"/>
+                    <Label Grid.Row="1" Grid.Column="0"
+                           Style="{StaticResource RowSubLabel}"
+                           Text="{Binding GpsIntervalSeconds, StringFormat='Mỗi {0} giây'}"/>
+                    <Slider
+                        Grid.Row="0" Grid.Column="1"
+                        Grid.RowSpan="2"
+                        WidthRequest="140"
+                        Minimum="3" Maximum="30" Value="{Binding GpsIntervalSeconds}"
+                        MinimumTrackColor="#2196F3"
+                        ThumbColor="#2196F3"/>
+                </Grid>
+            </Border>
+
+            <Border Style="{StaticResource SettingRow}">
+                <Grid ColumnDefinitions="*,Auto">
+                    <VerticalStackLayout Grid.Column="0" Spacing="2">
+                        <Label Style="{StaticResource RowLabel}" Text="Lưu lịch sử GPS"/>
+                        <Label Style="{StaticResource RowSubLabel}"
+                               Text="Dùng để vẽ lộ trình di chuyển"/>
+                    </VerticalStackLayout>
+                    <Switch
+                        Grid.Column="1"
+                        IsToggled="{Binding SaveGpsHistory}"
+                        OnColor="#2196F3"
+                        VerticalOptions="Center"/>
+                </Grid>
+            </Border>
+
+            <!-- ══ NARRATION SETTINGS ══ -->
+            <Label Style="{StaticResource GroupHeader}" Text="Thuyết minh"/>
+
+            <Border Style="{StaticResource SettingRow}">
+                <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto">
+                    <Label Grid.Row="0" Grid.Column="0"
+                           Style="{StaticResource RowLabel}"
+                           Text="Thời gian chờ (Cooldown)"/>
+                    <Label Grid.Row="1" Grid.Column="0"
+                           Style="{StaticResource RowSubLabel}"
+                           Text="{Binding CooldownSeconds, StringFormat='{0} giây giữa 2 lần phát'}"/>
+                    <Slider
+                        Grid.Row="0" Grid.Column="1"
+                        Grid.RowSpan="2"
+                        WidthRequest="140"
+                        Minimum="10" Maximum="120" Value="{Binding CooldownSeconds}"
+                        MinimumTrackColor="#2196F3"
+                        ThumbColor="#2196F3"/>
+                </Grid>
+            </Border>
+
+            <Border Style="{StaticResource SettingRow}">
+                <Grid ColumnDefinitions="*,Auto">
+                    <VerticalStackLayout Grid.Column="0" Spacing="2">
+                        <Label Style="{StaticResource RowLabel}" Text="Ngôn ngữ thuyết minh"/>
+                        <Label Style="{StaticResource RowSubLabel}"
+                               Text="Ngôn ngữ mặc định khi phát"/>
+                    </VerticalStackLayout>
+                    <Picker
+                        Grid.Column="1"
+                        WidthRequest="80"
+                        ItemsSource="{Binding Languages}"
+                        SelectedItem="{Binding PreferredLanguage}"
+                        FontSize="14"/>
+                </Grid>
+            </Border>
+
+            <Border Style="{StaticResource SettingRow}">
+                <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto">
+                    <Label Grid.Row="0" Grid.Column="0"
+                           Style="{StaticResource RowLabel}"
+                           Text="Âm lượng"/>
+                    <Label Grid.Row="1" Grid.Column="0"
+                           Style="{StaticResource RowSubLabel}"
+                           Text="{Binding AudioVolume, StringFormat='{0:P0}'}"/>
+                    <Slider
+                        Grid.Row="0" Grid.Column="1"
+                        Grid.RowSpan="2"
+                        WidthRequest="140"
+                        Minimum="0" Maximum="1" Value="{Binding AudioVolume}"
+                        MinimumTrackColor="#2196F3"
+                        ThumbColor="#2196F3"/>
+                </Grid>
+            </Border>
+
+            <Border Style="{StaticResource SettingRow}">
+                <Grid ColumnDefinitions="*,Auto">
+                    <VerticalStackLayout Grid.Column="0" Spacing="2">
+                        <Label Style="{StaticResource RowLabel}" Text="Ưu tiên file audio"/>
+                        <Label Style="{StaticResource RowSubLabel}"
+                               Text="Tắt = dùng TTS thay thế"/>
+                    </VerticalStackLayout>
+                    <Switch
+                        Grid.Column="1"
+                        IsToggled="{Binding PreferAudioFile}"
+                        OnColor="#2196F3"
+                        VerticalOptions="Center"/>
+                </Grid>
+            </Border>
+
+            <!-- ══ CACHE INFO ══ -->
+            <Label Style="{StaticResource GroupHeader}" Text="Bộ nhớ đệm (Cache)"/>
+
+            <Border Style="{StaticResource SettingRow}">
+                <Grid ColumnDefinitions="*,Auto">
+                    <VerticalStackLayout Grid.Column="0" Spacing="2">
+                        <Label Style="{StaticResource RowLabel}" Text="POI đã lưu"/>
+                        <Label Style="{StaticResource RowSubLabel}"
+                               Text="{Binding LastSyncText, StringFormat='Sync: {0}'}"/>
+                    </VerticalStackLayout>
+                    <Label
+                        Grid.Column="1"
+                        Text="{Binding CachedPoiCount, StringFormat='{0} điểm'}"
+                        FontSize="15" FontAttributes="Bold"
+                        TextColor="#2196F3"
+                        VerticalOptions="Center"/>
+                </Grid>
+            </Border>
+
+            <Border Style="{StaticResource SettingRow}">
+                <Grid ColumnDefinitions="*,Auto">
+                    <Label Style="{StaticResource RowLabel}" Text="Kích thước database"/>
+                    <Label
+                        Grid.Column="1"
+                        Text="{Binding DbSizeText}"
+                        FontSize="14"
+                        TextColor="#888"
+                        VerticalOptions="Center"/>
+                </Grid>
+            </Border>
+
+            <!-- ══ ACTIONS ══ -->
+            <Label Style="{StaticResource GroupHeader}" Text="Hành động"/>
+
+            <Border Style="{StaticResource SettingRow}">
+                <Button
+                    Text="↺ Reset tất cả Cooldown"
+                    BackgroundColor="Transparent"
+                    TextColor="#2196F3"
+                    FontSize="14"
+                    HorizontalOptions="Start"
+                    Padding="0"
+                    Command="{Binding ResetAllCooldownsCommand}"/>
+            </Border>
+
+            <Border Style="{StaticResource SettingRow}">
+                <Button
+                    Text="🗑 Dọn dẹp dữ liệu cũ"
+                    BackgroundColor="Transparent"
+                    TextColor="#FF9800"
+                    FontSize="14"
+                    HorizontalOptions="Start"
+                    Padding="0"
+                    Command="{Binding PurgeOldDataCommand}"/>
+            </Border>
+
+            <Border Style="{StaticResource SettingRow}">
+                <Button
+                    Text="⚠ Xoá toàn bộ cache"
+                    BackgroundColor="Transparent"
+                    TextColor="#F44336"
+                    FontSize="14"
+                    HorizontalOptions="Start"
+                    Padding="0"
+                    Command="{Binding ClearCacheCommand}"/>
+            </Border>
+
+            <!-- ══ SAVE BUTTON ══ -->
+            <Button
+                Margin="16,20,16,8"
+                Text="💾 Lưu cài đặt"
+                BackgroundColor="#2196F3"
+                TextColor="White"
+                FontSize="16" FontAttributes="Bold"
+                HeightRequest="52"
+                CornerRadius="14"
+                Command="{Binding SaveSettingsCommand}">
+                <Button.Shadow>
+                    <Shadow Brush="#442196F3" Offset="0,3" Radius="8"/>
+                </Button.Shadow>
+            </Button>
+
+            <!-- Status message -->
+            <Label
+                Margin="16,0,16,8"
+                Text="{Binding StatusMessage}"
+                FontSize="13"
+                TextColor="#4CAF50"
+                HorizontalOptions="Center"
+                IsVisible="{Binding StatusMessage,
+                    Converter={StaticResource StringToBoolConverter}}"/>
+
+            <BoxView HeightRequest="24" Color="Transparent"/>
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

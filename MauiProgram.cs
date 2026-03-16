@@ -1,62 +1,78 @@
-﻿using CommunityToolkit.Maui;
-using Microsoft.Extensions.Logging;
-using Syncfusion.Maui.Toolkit.Hosting;
+using CommunityToolkit.Maui;
+using GpsGeoFence.Data;
+using GpsGeoFence.Interfaces;
+using GpsGeoFence.Pages;
+using GpsGeoFence.Services.Api;
+using GpsGeoFence.Services.Audio;
+using GpsGeoFence.Services.Geofence;
+using GpsGeoFence.Services.Gps;
+using GpsGeoFence.ViewModels;
+using Plugin.Maui.Audio;
+// FIX: UseBarcodeReader nằm trong namespace này
+using ZXing.Net.Maui.Controls;
 
-namespace GpsGeoFence
+namespace GpsGeoFence;
+
+public static class MauiProgram
 {
-    public static class MauiProgram
+    public static MauiApp CreateMauiApp()
     {
-        public static MauiApp CreateMauiApp()
-        {
-            var builder = MauiApp.CreateBuilder();
-            builder
-                .UseMauiApp<App>()
-                .UseMauiCommunityToolkit()
-                .ConfigureSyncfusionToolkit()
-                .ConfigureMauiHandlers(handlers =>
-                {
-#if WINDOWS
-    				Microsoft.Maui.Controls.Handlers.Items.CollectionViewHandler.Mapper.AppendToMapping("KeyboardAccessibleCollectionView", (handler, view) =>
-    				{
-    					handler.PlatformView.SingleSelectionFollowsFocus = false;
-    				});
+        var builder = MauiApp.CreateBuilder();
 
-    				Microsoft.Maui.Handlers.ContentViewHandler.Mapper.AppendToMapping(nameof(Pages.Controls.CategoryChart), (handler, view) =>
-    				{
-    					if (view is Pages.Controls.CategoryChart && handler.PlatformView is Microsoft.Maui.Platform.ContentPanel contentPanel)
-    					{
-    						contentPanel.IsTabStop = true;
-    					}
-    				});
-#endif
-                })
-                .ConfigureFonts(fonts =>
-                {
-                    fonts.AddFont("OpenSans-Regular.ttf", "OpenSansRegular");
-                    fonts.AddFont("OpenSans-Semibold.ttf", "OpenSansSemibold");
-                    fonts.AddFont("SegoeUI-Semibold.ttf", "SegoeSemibold");
-                    fonts.AddFont("FluentSystemIcons-Regular.ttf", FluentUI.FontFamily);
-                });
+        builder
+            .UseMauiApp<App>()
+            .UseMauiCommunityToolkit()
+            .UseMauiMaps()
+            // FIX: cần using ZXing.Net.Maui.Controls
+            .UseBarcodeReader()
+            .ConfigureFonts(fonts =>
+            {
+                fonts.AddFont("OpenSans-Regular.ttf",  "OpenSansRegular");
+                fonts.AddFont("OpenSans-Semibold.ttf", "OpenSansSemibold");
+            });
 
 #if DEBUG
-    		builder.Logging.AddDebug();
-    		builder.Services.AddLogging(configure => configure.AddDebug());
+        builder.Logging.AddDebug();
 #endif
 
-            builder.Services.AddSingleton<ProjectRepository>();
-            builder.Services.AddSingleton<TaskRepository>();
-            builder.Services.AddSingleton<CategoryRepository>();
-            builder.Services.AddSingleton<TagRepository>();
-            builder.Services.AddSingleton<SeedDataService>();
-            builder.Services.AddSingleton<ModalErrorHandler>();
-            builder.Services.AddSingleton<MainPageModel>();
-            builder.Services.AddSingleton<ProjectListPageModel>();
-            builder.Services.AddSingleton<ManageMetaPageModel>();
+        var s = builder.Services;
 
-            builder.Services.AddTransientWithShellRoute<ProjectDetailPage, ProjectDetailPageModel>("project");
-            builder.Services.AddTransientWithShellRoute<TaskDetailPage, TaskDetailPageModel>("task");
+        // Data
+        s.AddSingleton<LocalDbContext>();
 
-            return builder.Build();
-        }
+        // Services
+        s.AddSingleton<ILocalCacheService, LocalCacheService>();
+        s.AddSingleton<IGpsService,        GpsService>();
+        s.AddSingleton(AudioManager.Current);
+        s.AddSingleton<IAudioPlayerService, AudioPlayerService>();
+        s.AddSingleton<INarrationEngine,   NarrationEngineService>();
+        s.AddSingleton<IGeofenceService,   GeofenceService>();
+        s.AddHttpClient<IApiService, ApiService>(c =>
+        {
+            c.BaseAddress = new Uri("https://your-api.azurewebsites.net/api/");
+            c.Timeout     = TimeSpan.FromSeconds(30);
+        });
+
+        // ViewModels
+        s.AddSingleton<MapViewModel>();
+        s.AddTransient<PoiDetailViewModel>();
+        s.AddSingleton<SettingsViewModel>();
+
+        // Pages
+        s.AddSingleton<MapPage>();
+        s.AddTransient<PoiDetailPage>();
+        s.AddTransient<QrScanPage>();
+        s.AddSingleton<SettingsPage>();
+        s.AddSingleton<AppShell>();
+
+        var app = builder.Build();
+        InitDatabaseAsync(app).GetAwaiter().GetResult();
+        return app;
+    }
+
+    private static async Task InitDatabaseAsync(MauiApp app)
+    {
+        var db = app.Services.GetRequiredService<LocalDbContext>();
+        await DatabaseHelper.SetupAsync(db);
     }
 }
