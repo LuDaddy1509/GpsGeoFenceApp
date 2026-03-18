@@ -3,208 +3,132 @@
     x:Class="GpsGeoFence.Pages.MapPage"
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
-    xmlns:maps="clr-namespace:Microsoft.Maui.Controls.Maps;assembly=Microsoft.Maui.Controls.Maps"
     xmlns:vm="clr-namespace:GpsGeoFence.ViewModels"
+    xmlns:dto="clr-namespace:GpsGeoFence.DTOs"
     x:DataType="vm:MapViewModel"
-    Shell.NavBarIsVisible="False">
+    Shell.NavBarIsVisible="False"
+    BackgroundColor="#1A1A2E">
 
-    <ContentPage.Resources>
-        <Color x:Key="PrimaryColor">#2196F3</Color>
-        <Color x:Key="SuccessColor">#4CAF50</Color>
-        <Color x:Key="DangerColor">#F44336</Color>
-    </ContentPage.Resources>
+    <Grid RowDefinitions="Auto,*,Auto">
 
-    <Grid>
-        <!-- ══ LAYER 1: BẢN ĐỒ ══
-             ✅ FIX: Bỏ VisibleRegion binding — set từ code-behind
-             ✅ FIX: Bỏ ItemsSource binding trên Map (dùng Pins thay thế)
-             ✅ FIX: Event handlers đặt trong code-behind, không binding XAML -->
-        <maps:Map
-            x:Name="MainMap"
-            MapType="Street"
-            IsShowingUser="True"
-            IsScrollEnabled="True"
-            IsZoomEnabled="True"/>
-
-        <!-- ══ LAYER 2: TOP STATUS BAR ══ -->
-        <Border
-            Margin="12,48,12,0"
-            VerticalOptions="Start"
-            BackgroundColor="{AppThemeBinding Light=White, Dark=#1E1E1E}"
-            StrokeShape="RoundRectangle 16"
-            Stroke="Transparent"
-            Padding="14,10">
-            <Border.Shadow>
-                <Shadow Brush="#44000000" Offset="0,2" Radius="8"/>
-            </Border.Shadow>
-            <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto">
-                <Label
-                    Grid.Column="0" Grid.Row="0"
-                    Text="GPS GeoFence"
-                    FontSize="16" FontAttributes="Bold"
-                    TextColor="{AppThemeBinding Light=#1A1A1A, Dark=White}"/>
-                <HorizontalStackLayout Grid.Column="1" Grid.Row="0" Spacing="4">
-                    <Ellipse WidthRequest="8" HeightRequest="8" VerticalOptions="Center">
-                        <Ellipse.Fill>
-                            <SolidColorBrush Color="#4CAF50"/>
-                        </Ellipse.Fill>
-                    </Ellipse>
-                    <Label
-                        Text="{Binding IsTracking}"
-                        FontSize="12"
-                        TextColor="{AppThemeBinding Light=#555, Dark=#AAA}"
-                        VerticalOptions="Center"/>
-                </HorizontalStackLayout>
-                <Label
-                    Grid.Column="0" Grid.Row="1" Grid.ColumnSpan="2"
-                    Text="{Binding StatusMessage}"
-                    FontSize="12"
-                    TextColor="{AppThemeBinding Light=#666, Dark=#AAA}"
-                    LineBreakMode="TailTruncation"/>
-            </Grid>
-        </Border>
-
-        <!-- ══ LAYER 3: POI NEAR BANNER ══ -->
-        <Border
-            Margin="12,0,12,100"
-            VerticalOptions="End"
-            IsVisible="{Binding HasNearestPoi}"
-            BackgroundColor="#E3F2FD"
-            StrokeShape="RoundRectangle 14"
-            Stroke="#2196F3"
-            StrokeThickness="1"
-            Padding="14,10">
+        <!-- STATUS BAR -->
+        <Border Grid.Row="0" Margin="12,48,12,0"
+                BackgroundColor="#16213E"
+                StrokeShape="RoundRectangle 16"
+                Stroke="Transparent" Padding="14,12">
             <Grid ColumnDefinitions="*,Auto">
                 <VerticalStackLayout Grid.Column="0" Spacing="2">
-                    <Label Text="Gần bạn" FontSize="11" TextColor="#1565C0"/>
-                    <Label
-                        Text="{Binding NearestPoiName}"
-                        FontSize="15" FontAttributes="Bold"
-                        TextColor="#0D47A1"
-                        LineBreakMode="TailTruncation"/>
-                    <Label
-                        Text="{Binding NearestPoiDistance, StringFormat='{0:F0} mét'}"
-                        FontSize="12" TextColor="#1976D2"/>
+                    <Label Text="GPS GeoFence"
+                           FontSize="18" FontAttributes="Bold"
+                           TextColor="White"/>
+                    <Label Text="{Binding StatusMessage}"
+                           FontSize="12" TextColor="#90CAF9"
+                           LineBreakMode="TailTruncation"/>
                 </VerticalStackLayout>
-                <Button
-                    Grid.Column="1"
-                    Text="Chi tiết"
-                    FontSize="13"
-                    BackgroundColor="#2196F3"
-                    TextColor="White"
-                    CornerRadius="10"
-                    Padding="12,6"
-                    Command="{Binding SelectPoiCommand}"
-                    CommandParameter="{Binding CurrentNearestPoi}"/>
+                <Border Grid.Column="1"
+                        BackgroundColor="{Binding IsTracking,
+                            Converter={StaticResource BoolToColorConverter},
+                            ConverterParameter='#4CAF50|#F44336'}"
+                        StrokeShape="RoundRectangle 12"
+                        Stroke="Transparent" Padding="10,5">
+                    <Label Text="{Binding IsTracking,
+                               Converter={StaticResource BoolToStringConverter},
+                               ConverterParameter='GPS BẬT|GPS TẮT'}"
+                           FontSize="12" FontAttributes="Bold"
+                           TextColor="White"/>
+                </Border>
             </Grid>
         </Border>
 
-        <!-- ══ LAYER 4: AUDIO PLAYING BANNER ══ -->
-        <Border
-            Margin="12,0,12,160"
-            VerticalOptions="End"
-            IsVisible="{Binding IsPlayingAudio}"
-            BackgroundColor="#E8F5E9"
-            StrokeShape="RoundRectangle 14"
-            Stroke="#4CAF50"
-            StrokeThickness="1"
-            Padding="14,10">
-            <HorizontalStackLayout Spacing="10">
-                <Label Text="🔊" FontSize="20" VerticalOptions="Center"/>
-                <VerticalStackLayout Spacing="2" VerticalOptions="Center">
-                    <Label Text="Đang phát thuyết minh"
-                           FontSize="13" FontAttributes="Bold"
-                           TextColor="#2E7D32"/>
-                    <Label Text="{Binding PlayingPoiName}"
-                           FontSize="12" TextColor="#388E3C"/>
-                </VerticalStackLayout>
-            </HorizontalStackLayout>
-        </Border>
+        <!-- POI LIST -->
+        <ScrollView Grid.Row="1" Margin="12,12,12,0">
+            <VerticalStackLayout Spacing="8">
+                <Label Text="📍 Danh sách điểm tham quan"
+                       FontSize="15" FontAttributes="Bold"
+                       TextColor="White" Margin="4,0,0,4"/>
 
-        <!-- ══ LAYER 5: ACTION BUTTONS ══ -->
-        <VerticalStackLayout
-            Margin="0,0,16,32"
-            HorizontalOptions="End"
-            VerticalOptions="End"
-            Spacing="12">
+                <CollectionView ItemsSource="{Binding Pois}">
+                    <CollectionView.ItemTemplate>
+                        <DataTemplate x:DataType="dto:PoiDto">
+                            <Border BackgroundColor="#16213E"
+                                    StrokeShape="RoundRectangle 12"
+                                    Stroke="#0F3460"
+                                    Padding="14,12" Margin="0,0,0,8">
+                                <Grid ColumnDefinitions="*,Auto">
+                                    <VerticalStackLayout Grid.Column="0" Spacing="4">
+                                        <Label Text="{Binding Name}"
+                                               FontSize="15" FontAttributes="Bold"
+                                               TextColor="White"/>
+                                        <Label Text="{Binding Description}"
+                                               FontSize="12" TextColor="#90CAF9"
+                                               LineBreakMode="TailTruncation"
+                                               MaxLines="2"/>
+                                        <Label Text="{Binding RadiusMeters,
+                                                   StringFormat='Bán kính: {0}m'}"
+                                               FontSize="11" TextColor="#64B5F6"/>
+                                    </VerticalStackLayout>
+                                    <Label Grid.Column="1" Text="▶"
+                                           FontSize="20" TextColor="#2196F3"
+                                           VerticalOptions="Center"/>
+                                </Grid>
+                            </Border>
+                        </DataTemplate>
+                    </CollectionView.ItemTemplate>
+                </CollectionView>
 
-            <!-- Nút QR -->
-            <Button
-                HeightRequest="56" WidthRequest="56"
-                CornerRadius="28" Padding="0" FontSize="22"
-                Text="⊡"
-                BackgroundColor="White"
-                TextColor="#333"
-                Command="{Binding ScanQrCommand}"/>
+                <!-- Nearest POI -->
+                <Border IsVisible="{Binding HasNearestPoi}"
+                        BackgroundColor="#1565C0"
+                        StrokeShape="RoundRectangle 12"
+                        Stroke="Transparent" Padding="14,12">
+                    <VerticalStackLayout Spacing="4">
+                        <Label Text="📍 Gần bạn nhất:"
+                               FontSize="12" TextColor="#90CAF9"/>
+                        <Label Text="{Binding NearestPoiName}"
+                               FontSize="16" FontAttributes="Bold"
+                               TextColor="White"/>
+                        <Label Text="{Binding NearestPoiDistance,
+                                   StringFormat='{0:F0} mét'}"
+                               FontSize="13" TextColor="#64B5F6"/>
+                    </VerticalStackLayout>
+                </Border>
+            </VerticalStackLayout>
+        </ScrollView>
 
-            <!-- Nút My Location -->
-            <Button
-                HeightRequest="56" WidthRequest="56"
-                CornerRadius="28" Padding="0" FontSize="22"
-                Text="◎"
-                BackgroundColor="White"
-                TextColor="#2196F3"
-                Command="{Binding CenterMapCommand}"/>
-
-            <!-- Nút Start/Stop GPS -->
-            <Button
-                HeightRequest="64" WidthRequest="64"
-                CornerRadius="32" Padding="0" FontSize="24"
-                Text="{Binding IsTracking, StringFormat='{0}'}"
-                BackgroundColor="#4CAF50"
-                TextColor="White"
-                Command="{Binding ToggleTrackingCommand}">
-                <Button.Shadow>
-                    <Shadow Brush="#66000000" Offset="0,3" Radius="10"/>
-                </Button.Shadow>
-            </Button>
-        </VerticalStackLayout>
-
-        <!-- ══ LAYER 6: LOADING OVERLAY ══ -->
-        <Grid IsVisible="{Binding IsBusy}" BackgroundColor="#44000000">
-            <Border
-                HorizontalOptions="Center"
-                VerticalOptions="Center"
-                BackgroundColor="{AppThemeBinding Light=White, Dark=#2C2C2C}"
-                StrokeShape="RoundRectangle 16"
-                Padding="24,20">
-                <VerticalStackLayout Spacing="12" HorizontalOptions="Center">
-                    <ActivityIndicator IsRunning="True" Color="#2196F3" HeightRequest="40"/>
-                    <Label
-                        Text="{Binding BusyMessage}"
-                        FontSize="14"
-                        TextColor="{AppThemeBinding Light=#333, Dark=#DDD}"
-                        HorizontalOptions="Center"/>
-                </VerticalStackLayout>
-            </Border>
+        <!-- ACTION BUTTONS -->
+        <Grid Grid.Row="2" Margin="12,8,12,32"
+              ColumnDefinitions="*,*,*" ColumnSpacing="10">
+            <Button Grid.Column="0"
+                    Text="{Binding IsTracking,
+                        Converter={StaticResource BoolToStringConverter},
+                        ConverterParameter='⏹ Dừng|▶ GPS'}"
+                    BackgroundColor="{Binding IsTracking,
+                        Converter={StaticResource BoolToColorConverter},
+                        ConverterParameter='#F44336|#4CAF50'}"
+                    TextColor="White" FontAttributes="Bold"
+                    HeightRequest="52" CornerRadius="14"
+                    Command="{Binding ToggleTrackingCommand}"/>
+            <Button Grid.Column="1"
+                    Text="⊡ QR"
+                    BackgroundColor="#2196F3"
+                    TextColor="White" FontAttributes="Bold"
+                    HeightRequest="52" CornerRadius="14"
+                    Command="{Binding ScanQrCommand}"/>
+            <Button Grid.Column="2"
+                    Text="↺ Tải"
+                    BackgroundColor="#16213E"
+                    TextColor="White"
+                    HeightRequest="52" CornerRadius="14"
+                    Command="{Binding RefreshCommand}"/>
         </Grid>
 
-        <!-- ══ LAYER 7: ERROR BANNER ══ -->
-        <Border
-            x:Name="ErrorBanner"
-            Margin="12,0,12,16"
-            VerticalOptions="End"
-            IsVisible="{Binding HasError}"
-            BackgroundColor="#FFEBEE"
-            StrokeShape="RoundRectangle 12"
-            Stroke="#F44336"
-            StrokeThickness="1"
-            Padding="14,10">
-            <Grid ColumnDefinitions="*,Auto">
-                <Label
-                    Grid.Column="0"
-                    Text="{Binding ErrorMessage}"
-                    FontSize="13"
-                    TextColor="#C62828"/>
-                <!-- ✅ FIX: dùng x:Name + Clicked trong code-behind thay vì binding event -->
-                <Button
-                    Grid.Column="1"
-                    x:Name="DismissErrorBtn"
-                    Text="✕" FontSize="14"
-                    BackgroundColor="Transparent"
-                    TextColor="#C62828"
-                    Padding="8,0"/>
-            </Grid>
-        </Border>
+        <!-- LOADING -->
+        <Grid Grid.RowSpan="3" IsVisible="{Binding IsBusy}"
+              BackgroundColor="#88000000">
+            <ActivityIndicator IsRunning="True" Color="#2196F3"
+                               HorizontalOptions="Center"
+                               VerticalOptions="Center"/>
+        </Grid>
+
     </Grid>
 </ContentPage>

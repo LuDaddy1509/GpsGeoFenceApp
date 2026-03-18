@@ -2,82 +2,14 @@
 <Application
     x:Class="GpsGeoFence.App"
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
-    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
-    xmlns:conv="clr-namespace:GpsGeoFence.Converters">
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml">
 
     <Application.Resources>
         <ResourceDictionary>
-
-            <!-- ══ CONVERTERS (dùng toàn app) ══ -->
-            <conv:BoolToStringConverter   x:Key="BoolToStringConverter"/>
-            <conv:BoolToColorConverter    x:Key="BoolToColorConverter"/>
-            <conv:InverseBoolConverter    x:Key="InverseBoolConverter"/>
-            <conv:StringToBoolConverter   x:Key="StringToBoolConverter"/>
-            <conv:DistanceConverter       x:Key="DistanceConverter"/>
-            <conv:PriorityConverter       x:Key="PriorityConverter"/>
-            <conv:SecondsToTimeConverter  x:Key="SecondsToTimeConverter"/>
-
-            <!-- ══ COLORS ══ -->
-            <Color x:Key="Primary">#2196F3</Color>
-            <Color x:Key="PrimaryDark">#1565C0</Color>
-            <Color x:Key="Success">#4CAF50</Color>
-            <Color x:Key="Danger">#F44336</Color>
-            <Color x:Key="Warning">#FF9800</Color>
-            <Color x:Key="Surface">#F5F5F5</Color>
-            <Color x:Key="SurfaceDark">#1E1E1E</Color>
-
-            <!-- ══ TYPOGRAPHY ══ -->
-            <Style x:Key="TitleLabel" TargetType="Label">
-                <Setter Property="FontSize"       Value="22"/>
-                <Setter Property="FontAttributes" Value="Bold"/>
-                <Setter Property="TextColor"
-                        Value="{AppThemeBinding Light=#1A1A1A, Dark=White}"/>
-            </Style>
-
-            <Style x:Key="SubtitleLabel" TargetType="Label">
-                <Setter Property="FontSize"  Value="14"/>
-                <Setter Property="TextColor" Value="#888"/>
-            </Style>
-
-            <Style x:Key="BodyLabel" TargetType="Label">
-                <Setter Property="FontSize"  Value="15"/>
-                <Setter Property="LineHeight" Value="1.5"/>
-                <Setter Property="TextColor"
-                        Value="{AppThemeBinding Light=#333, Dark=#CCC}"/>
-            </Style>
-
-            <!-- ══ BUTTONS ══ -->
-            <Style x:Key="PrimaryButton" TargetType="Button">
-                <Setter Property="BackgroundColor" Value="#2196F3"/>
-                <Setter Property="TextColor"       Value="White"/>
-                <Setter Property="FontAttributes"  Value="Bold"/>
-                <Setter Property="FontSize"        Value="15"/>
-                <Setter Property="CornerRadius"    Value="12"/>
-                <Setter Property="HeightRequest"   Value="50"/>
-            </Style>
-
-            <Style x:Key="OutlineButton" TargetType="Button">
-                <Setter Property="BackgroundColor" Value="Transparent"/>
-                <Setter Property="TextColor"       Value="#2196F3"/>
-                <Setter Property="FontSize"        Value="14"/>
-                <Setter Property="CornerRadius"    Value="12"/>
-                <Setter Property="BorderColor"     Value="#2196F3"/>
-                <Setter Property="BorderWidth"     Value="1.5"/>
-                <Setter Property="HeightRequest"   Value="46"/>
-            </Style>
-
-            <!-- ══ CARD BORDER ══ -->
-            <Style x:Key="Card" TargetType="Border">
-                <Setter Property="BackgroundColor"
-                        Value="{AppThemeBinding Light=White, Dark=#1E1E1E}"/>
-                <Setter Property="StrokeShape"    Value="RoundRectangle 16"/>
-                <Setter Property="Stroke"         Value="Transparent"/>
-                <Setter Property="Padding"        Value="16"/>
-                <Setter Property="Shadow">
-                    <Shadow Brush="#22000000" Offset="0,2" Radius="8"/>
-                </Setter>
-            </Style>
-
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="Resources/Styles/Colors.xaml" />
+                <ResourceDictionary Source="Resources/Styles/Styles.xaml" />
+            </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>
     </Application.Resources>
 

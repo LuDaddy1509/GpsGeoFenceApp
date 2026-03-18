@@ -8,7 +8,6 @@ using GpsGeoFence.Services.Geofence;
 using GpsGeoFence.Services.Gps;
 using GpsGeoFence.ViewModels;
 using Plugin.Maui.Audio;
-// FIX: UseBarcodeReader nằm trong namespace này
 using ZXing.Net.Maui.Controls;
 
 namespace GpsGeoFence;
@@ -23,11 +22,10 @@ public static class MauiProgram
             .UseMauiApp<App>()
             .UseMauiCommunityToolkit()
             .UseMauiMaps()
-            // FIX: cần using ZXing.Net.Maui.Controls
             .UseBarcodeReader()
             .ConfigureFonts(fonts =>
             {
-                fonts.AddFont("OpenSans-Regular.ttf",  "OpenSansRegular");
+                fonts.AddFont("OpenSans-Regular.ttf", "OpenSansRegular");
                 fonts.AddFont("OpenSans-Semibold.ttf", "OpenSansSemibold");
             });
 
@@ -37,28 +35,26 @@ public static class MauiProgram
 
         var s = builder.Services;
 
-        // Data
         s.AddSingleton<LocalDbContext>();
-
-        // Services
         s.AddSingleton<ILocalCacheService, LocalCacheService>();
-        s.AddSingleton<IGpsService,        GpsService>();
+        s.AddSingleton<IGpsService, GpsService>();
         s.AddSingleton(AudioManager.Current);
         s.AddSingleton<IAudioPlayerService, AudioPlayerService>();
-        s.AddSingleton<INarrationEngine,   NarrationEngineService>();
-        s.AddSingleton<IGeofenceService,   GeofenceService>();
+        s.AddSingleton<INarrationEngine, NarrationEngineService>();
+        s.AddSingleton<IGeofenceService, GeofenceService>();
         s.AddHttpClient<IApiService, ApiService>(c =>
         {
+            // TODO: Replace with your actual API endpoint
+            // For local development: use 10.0.2.2 for Android emulator, localhost for physical device
+            // c.BaseAddress = new Uri("http://10.0.2.2:5000/api/");
             c.BaseAddress = new Uri("https://your-api.azurewebsites.net/api/");
-            c.Timeout     = TimeSpan.FromSeconds(30);
+            c.Timeout = TimeSpan.FromSeconds(5);  // Reduced from 30s to 5s to prevent hanging
         });
 
-        // ViewModels
         s.AddSingleton<MapViewModel>();
         s.AddTransient<PoiDetailViewModel>();
         s.AddSingleton<SettingsViewModel>();
 
-        // Pages
         s.AddSingleton<MapPage>();
         s.AddTransient<PoiDetailPage>();
         s.AddTransient<QrScanPage>();
@@ -66,7 +62,16 @@ public static class MauiProgram
         s.AddSingleton<AppShell>();
 
         var app = builder.Build();
-        InitDatabaseAsync(app).GetAwaiter().GetResult();
+
+        try
+        {
+            InitDatabaseAsync(app).GetAwaiter().GetResult();
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[DB INIT ERROR] {ex}");
+        }
+
         return app;
     }
 

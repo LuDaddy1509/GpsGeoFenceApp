@@ -1,4 +1,5 @@
 using GpsGeoFence.DTOs;
+using CommunityToolkit.Mvvm.ComponentModel;
 
 namespace GpsGeoFence.Interfaces;
 

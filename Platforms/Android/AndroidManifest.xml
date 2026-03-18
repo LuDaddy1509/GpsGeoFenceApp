@@ -24,7 +24,8 @@
         android:icon="@mipmap/appicon"
         android:allowBackup="true"
         android:usesCleartextTraffic="false">
-
+		<meta-data android:name="com.google.android.geo.API_KEY"
+				 android:value="AIzaSyA7GjjnXr0hAZaw_bqXx-QdjnXISM4VWs0"/>
         <activity
             android:name="com.companyname.gpsgeofence.MainActivity"
             android:exported="true"

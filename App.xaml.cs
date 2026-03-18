@@ -2,17 +2,41 @@ namespace GpsGeoFence;
 
 public partial class App : Application
 {
-    private readonly AppShell _shell;
-
-    public App(AppShell shell)
+    public App()
     {
         InitializeComponent();
-        _shell = shell;
-        // FIX: Không dùng MainPage = shell (obsolete trong .NET MAUI 10)
-        // Dùng CreateWindow override thay thế
     }
 
-    // FIX: Override CreateWindow thay vì set MainPage
     protected override Window CreateWindow(IActivationState? activationState)
-        => new Window(_shell) { Title = "GPS GeoFence" };
+    {
+        try
+        {
+            var shell = IPlatformApplication.Current!.Services
+                            .GetRequiredService<AppShell>();
+            return new Window(shell) { Title = "GPS GeoFence" };
+        }
+        catch (Exception ex)
+        {
+            // Hiện lỗi trực tiếp lên màn hình
+            var msg = ex.ToString();
+            System.Diagnostics.Debug.WriteLine($"[CRASH CreateWindow] {msg}");
+
+            var page = new ContentPage
+            {
+                BackgroundColor = Colors.Black,
+                Content = new ScrollView
+                {
+                    Content = new Label
+                    {
+                        Text              = $"LỖI KHỞI ĐỘNG:\n\n{msg}",
+                        TextColor         = Colors.Red,
+                        FontSize          = 11,
+                        Margin            = new Thickness(12),
+                        LineBreakMode     = LineBreakMode.WordWrap
+                    }
+                }
+            };
+            return new Window(page);
+        }
+    }
 }
