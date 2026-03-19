@@ -1,43 +1,52 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
-using MauiApp1.Models;
+﻿using MauiApp1.Models;
 using MauiApp1.Services;
 using Microsoft.Maui.Controls;
 using Microsoft.Maui.Controls.Maps;
 using Microsoft.Maui.Devices.Sensors;
 using Microsoft.Maui.Maps;
-
 namespace MauiApp1.Pages;
 
 public partial class MapPage : ContentPage
 {
-
-
     private readonly IGeofenceService _geofence;
     private readonly ILocationService _location;
-    private readonly List<MauiApp1.Models.Poi> _pois = new();
+
+    private readonly List<Poi> _pois = new();
     private CancellationTokenSource? _cts;
-    private Location _lastLocation;
+    private Location? _lastLocation;
 
-    public MapPage()
+    public MapPage(IGeofenceService geofence, ILocationService location)
     {
-        InitializeComponent();
+        InitializeComponent(); // ✅ sẽ có vì x:Class khớp namespace
 
-        // 1) Khai báo POI mẫu
+        _geofence = geofence ?? throw new ArgumentNullException(nameof(geofence));
+        _location = location ?? throw new ArgumentNullException(nameof(location));
+
+        BtnStart.Clicked += (_, __) => StartUiLoop();
+        BtnStop.Clicked += (_, __) => StopUiLoop();
+
+        SeedPoisAndPins();
+
+        _geofence.OnPoiEvent += async (poi, type) =>
+            await MainThread.InvokeOnMainThreadAsync(() =>
+                DisplayAlertAsync("Geofence", $"{type}: {poi.Name}", "OK"));
+    }
+
+    void SeedPoisAndPins()
+    {
         _pois.Add(new Poi
         {
-            Id = "poi_hcmut",
-            Name = "ĐH BK",
-            Description = "Cổng trường",
-            Latitude = 10.772,
-            Longitude = 106.657,
-            RadiusMeters = 120,
-            NearRadiusMeters = 220,
+            Id = "poi_hcm",
+            Name = "TP.HCM",
+            Description = "Trung tâm",
+            Latitude = 10.776889,
+            Longitude = 106.700806,
+            RadiusMeters = 150,
+            NearRadiusMeters = 300,
             DebounceSeconds = 3,
             CooldownSeconds = 30
         });
+
         _pois.Add(new Poi
         {
             Id = "poi_ntmk",
@@ -46,12 +55,11 @@ public partial class MapPage : ContentPage
             Latitude = 10.787,
             Longitude = 106.700,
             RadiusMeters = 120,
-            NearRadiusMeters = 220,
+            NearRadiusMeters = 240,
             DebounceSeconds = 3,
             CooldownSeconds = 30
         });
 
-        // 2) Vẽ marker POI lên map
         foreach (var p in _pois)
         {
             MyMap.Pins.Add(new Pin
@@ -61,39 +69,44 @@ public partial class MapPage : ContentPage
                 Location = new Location(p.Latitude, p.Longitude)
             });
         }
-
-        // 3) Nhận sự kiện geofence (ENTER/EXIT/DWELL)
-        _geofence.OnPoiEvent += async (poi, type) =>
-        {
-            await MainThread.InvokeOnMainThreadAsync(async () =>
-                await DisplayAlertAsync("Geofence", $"{type}: {poi.Name}", "OK"));
-        };
     }
 
     protected override async void OnAppearing()
     {
         base.OnAppearing();
 
-        // Quyền vị trí
         var when = await Permissions.RequestAsync<Permissions.LocationWhenInUse>();
         if (when != PermissionStatus.Granted) return;
 
-        // Nếu muốn chạy nền, xin thêm:
-        _ = await Permissions.RequestAsync<Permissions.LocationAlways>();
+        _ = await Permissions.RequestAsync<Permissions.LocationAlways>(); // nền
 
-        // Đăng ký geofence
         await _geofence.RegisterAsync(_pois);
-
-        // Foreground: tính “NEAR”
-        _cts = new CancellationTokenSource();
-        _ = TrackLoopAsync(_cts.Token);
+        StartUiLoop();
     }
 
     protected override void OnDisappearing()
     {
+        StopUiLoop();
         base.OnDisappearing();
+    }
+
+    void StartUiLoop()
+    {
+        _cts?.Cancel();
+        _cts = new CancellationTokenSource();
+        _ = TrackLoopAsync(_cts.Token);
+
+        _location.StartTracking((lat, lng) =>
+        {
+            _lastLocation = new Location(lat, lng);
+        });
+    }
+
+    void StopUiLoop()
+    {
         _cts?.Cancel();
         _cts = null;
+        _location.StopTracking();
     }
 
     async Task TrackLoopAsync(CancellationToken token)
@@ -105,40 +118,34 @@ public partial class MapPage : ContentPage
             try
             {
                 var loc = await Geolocation.GetLocationAsync(req, token);
-                if (loc != null)
+                if (loc == null) { await Task.Delay(5000, token); continue; }
+
+                _lastLocation = loc;
+
+                // Camera follow nhẹ
+                MyMap.MoveToRegion(MapSpan.FromCenterAndRadius(loc, Distance.FromMeters(180)));
+
+                // Tính “đến gần” NEAR
+                foreach (var poi in _pois)
                 {
-                    _lastLocation = loc;
+                    var distMeters = Location.CalculateDistance(
+                        new Location(poi.Latitude, poi.Longitude),
+                        loc,
+                        DistanceUnits.Kilometers) * 1000.0;
 
-                    // camera bám theo
-                    MyMap.MoveToRegion(MapSpan.FromCenterAndRadius(loc, Distance.FromMeters(180)));
-
-                    // ====== “ĐẾN GẦN” (NEAR) ======
-                    foreach (var poi in _pois)
+                    if (distMeters <= poi.NearRadiusMeters && distMeters > poi.RadiusMeters)
                     {
-                        var distMeters = Location.CalculateDistance(
-                            new Location(poi.Latitude, poi.Longitude),
-                            loc,
-                            DistanceUnits.Kilometers) * 1000.0;
-
-                        if (distMeters <= poi.NearRadiusMeters && distMeters > poi.RadiusMeters)
+                        if (GeofenceEventGate.ShouldAccept(poi.Id, "NEAR", poi.DebounceSeconds, poi.CooldownSeconds))
                         {
-                            if (GeofenceEventGate.ShouldAccept(poi.Id, "NEAR", poi.DebounceSeconds, poi.CooldownSeconds))
-                            {
-                                await MainThread.InvokeOnMainThreadAsync(async () =>
-                                    await DisplayAlertAsync("Near POI", $"Đến gần: {poi.Name} (~{distMeters:F0} m)", "OK"));
-                            }
+                            await MainThread.InvokeOnMainThreadAsync(() =>
+                                DisplayAlertAsync("Near POI", $"Đến gần: {poi.Name} (~{distMeters:F0} m)", "OK"));
                         }
                     }
                 }
             }
-            catch
-            {
-                // timeout / tắt GPS -> bỏ qua
-            }
+            catch { /* timeout/deny -> bỏ qua lần này */ }
 
-            try { await Task.Delay(3000, token); } catch { }
+            try { await Task.Delay(5000, token); } catch { }
         }
     }
-
-    // (tùy chọn) nếu bạn cần xoay map theo hướng di chuyển, thêm lại logic tính bearing ở đây
 }

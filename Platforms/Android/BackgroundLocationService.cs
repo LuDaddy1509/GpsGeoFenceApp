@@ -1,85 +1,87 @@
-﻿using Android.App;
+﻿#if ANDROID
+using Microsoft.Maui;
+using Android.App;
 using Android.Content;
 using Android.Content.PM;
 using Android.OS;
 using AndroidX.Core.App;
 using MauiApp1.Services;
 using System;
-using System.Collections.Generic;
-using System.Text;
-using Resource = Microsoft.Maui.Controls.Resource;
+namespace MauiApp1.Platforms.Android;
 
-namespace MauiApp1.Platforms.Android
+[Service(ForegroundServiceType = ForegroundService.TypeLocation)]
+public sealed class BackgroundLocationService : Service
 {
-    [Service(ForegroundServiceType = ForegroundService.TypeLocation)]
-    public class BackgroundLocationService : Service
+    private ILocationService? _locationService;
+    private const string ChannelId = "gps_channel";
+
+    public override void OnCreate()
     {
-        private LocationService? _locationService;
-        private const string NOTIFICATION_CHANNEL_ID = "gps_channel";
-
-        public override void OnCreate()
+        base.OnCreate();
+        try
         {
-            base.OnCreate();
-            _locationService = new LocationService(this);
-            CreateNotificationChannel();
+            // Ép kiểu an toàn với toán tử 'as' và kiểm tra null cho Service Provider
+            var sp = IPlatformApplication.Current?.Services;
+            _locationService = sp?.GetService(typeof(ILocationService)) as ILocationService;
         }
+        catch { _locationService = null; }
 
-        public override StartCommandResult OnStartCommand(
-            Intent? intent, StartCommandFlags flags, int startId)
+        // Nếu DI không có, khởi tạo thủ công (đảm bảo không bao giờ null sau dòng này)
+        _locationService ??= new MauiApp1.Services.AndroidLocationService();
+        CreateNotificationChannel();
+    }
+
+    public override StartCommandResult OnStartCommand(Intent? intent, StartCommandFlags flags, int startId)
+    {
+        // Sử dụng ID thông báo > 0
+        StartForeground(1001, CreateNotification());
+
+        _locationService?.StartTracking((lat, lng) =>
         {
-            StartForeground(1, CreateNotification());
-            System.Diagnostics.Debug.WriteLine("BackgroundLocationService started");
-            
-            _locationService?.StartTracking((lat, lng) =>
-            {
-                System.Diagnostics.Debug.WriteLine($"[BG-Location] {DateTime.Now:HH:mm:ss} - Lat: {lat}, Lng: {lng}");
-            });
+            System.Diagnostics.Debug.WriteLine($"[BG] {lat}, {lng}");
+        });
 
-            return StartCommandResult.Sticky;
-        }
+        return StartCommandResult.Sticky;
+    }
 
-        private void CreateNotificationChannel()
+    private void CreateNotificationChannel()
+    {
+        // Sử dụng 'as' thay vì ép kiểu cứng để tránh lỗi văng app
+        var mgr = GetSystemService(NotificationService) as NotificationManager;
+        if (mgr == null) return;
+
+        if (Build.VERSION.SdkInt >= BuildVersionCodes.O)
         {
-            if (Build.VERSION.SdkInt >= BuildVersionCodes.O)
+            if (mgr.GetNotificationChannel(ChannelId) == null)
             {
-                var channel = new NotificationChannel(
-                    NOTIFICATION_CHANNEL_ID,
-                    "GPS Tracking",
-                    NotificationImportance.Low)
+                var channel = new NotificationChannel(ChannelId, "GPS Tracking", NotificationImportance.Low)
                 {
                     Description = "Đang theo dõi vị trí"
                 };
-
-                var notificationManager = GetSystemService(NotificationService) as NotificationManager;
-                notificationManager?.CreateNotificationChannel(channel);
+                mgr.CreateNotificationChannel(channel);
             }
-        }
-
-        private Notification CreateNotification()
-        {
-            const string channelId = "gps_channel";
-
-            // Đảm bảo đã tạo notification channel (Android 8+)
-            var mgr = (NotificationManager)GetSystemService(NotificationService)!;
-            if (Android.OS.Build.VERSION.SdkInt >= Android.OS.BuildVersionCodes.O &&
-                mgr.GetNotificationChannel(channelId) is null)
-            {
-                var ch = new NotificationChannel(channelId, "GPS Tracking", NotificationImportance.Default);
-                mgr.CreateNotificationChannel(ch);
-            }
-            return new NotificationCompat.Builder(this, channelId)
-                .SetContentTitle("GPS Tracking")
-                .SetContentText("Đang theo dõi vị trí")
-                .SetSmallIcon(Resource.Drawable.ic_stat_gps)   // ✅ dùng drawable tự tạo
-                .SetOngoing(true)
-                .Build();
-        }
-        public override IBinder OnBind(Intent? intent) => null;
-
-        public override void OnDestroy()
-        {
-            _locationService?.StopTracking();
-            base.OnDestroy();
         }
     }
+
+    private Notification CreateNotification()
+    {
+        var builder = new NotificationCompat.Builder(this, ChannelId)
+            .SetContentTitle("GPS Tracking")
+            .SetContentText("Đang theo dõi vị trí")
+            .SetSmallIcon(global::Android.Resource.Drawable.StatNotifyMore) // Sửa lỗi Resource
+            .SetOngoing(true);
+     var notification = builder.Build();
+
+        // Đảm bảo không trả về null
+        return notification ?? throw new InvalidOperationException("Could not create notification");
+    }
+
+    public override IBinder? OnBind(Intent? intent) => null;
+
+    public override void OnDestroy()
+    {
+        _locationService?.StopTracking();
+        base.OnDestroy();
+    }
 }
+#endif

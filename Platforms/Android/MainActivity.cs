@@ -8,10 +8,10 @@ namespace MauiApp1
     public class MainActivity : MauiAppCompatActivity
     {
 
-        protected override void OnCreate(Bundle savedInstanceState)
+        protected override void OnCreate(Bundle? savedInstanceState) // Thêm dấu ? ở đây
         {
             base.OnCreate(savedInstanceState);
-
+            // Init model model của Platform cũng cần truyền savedInstanceState (có thể null)
             Microsoft.Maui.ApplicationModel.Platform.Init(this, savedInstanceState);
         }
 
