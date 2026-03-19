@@ -1,6 +1,6 @@
-using GpsGeoFence.Models;
+using MauiApp1.Models;
 
-namespace GpsGeoFence.Pages.Controls
+namespace MauiApp1.Pages.Controls
 {
     public class ChipDataTemplateSelector : DataTemplateSelector
     {

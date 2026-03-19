@@ -1,4 +1,4 @@
-namespace GpsGeoFence.Services
+namespace MauiApp1.Services
 {
     /// <summary>
     /// Error Handler Service.

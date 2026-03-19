@@ -1,7 +1,7 @@
-using GpsGeoFence.Models;
+using MauiApp1.Models;
 using System.Diagnostics.CodeAnalysis;
 
-namespace GpsGeoFence.Utilities
+namespace MauiApp1.Utilities
 {
     /// <summary>
     /// Project Model Extensions

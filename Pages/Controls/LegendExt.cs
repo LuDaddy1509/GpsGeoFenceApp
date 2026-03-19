@@ -1,6 +1,6 @@
 using Syncfusion.Maui.Toolkit.Charts;
 
-namespace GpsGeoFence.Pages.Controls
+namespace MauiApp1.Pages.Controls
 {
     public class LegendExt : ChartLegend
     {

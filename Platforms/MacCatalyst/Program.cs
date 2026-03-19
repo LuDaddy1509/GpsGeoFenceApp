@@ -1,7 +1,7 @@
 ﻿using ObjCRuntime;
 using UIKit;
 
-namespace GpsGeoFence
+namespace MauiApp1
 {
     public class Program
     {

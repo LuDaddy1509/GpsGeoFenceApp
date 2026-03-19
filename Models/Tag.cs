@@ -1,7 +1,7 @@
 using CommunityToolkit.Maui.Core.Extensions;
 using System.Text.Json.Serialization;
 
-namespace GpsGeoFence.Models
+namespace MauiApp1.Models
 {
     public class Tag
     {

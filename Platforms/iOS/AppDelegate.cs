@@ -1,6 +1,6 @@
 ﻿using Foundation;
 
-namespace GpsGeoFence
+namespace MauiApp1
 {
     [Register("AppDelegate")]
     public class AppDelegate : MauiUIApplicationDelegate

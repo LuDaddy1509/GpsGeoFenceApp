@@ -1,42 +1,22 @@
-namespace GpsGeoFence;
+﻿using Microsoft.Extensions.DependencyInjection;
 
-public partial class App : Application
+namespace MauiApp1
 {
-    public App()
+    public partial class App : Application
     {
-        InitializeComponent();
-    }
-
-    protected override Window CreateWindow(IActivationState? activationState)
-    {
-        try
+        public App()
         {
-            var shell = IPlatformApplication.Current!.Services
-                            .GetRequiredService<AppShell>();
-            return new Window(shell) { Title = "GPS GeoFence" };
+            InitializeComponent();
         }
-        catch (Exception ex)
-        {
-            // Hiện lỗi trực tiếp lên màn hình
-            var msg = ex.ToString();
-            System.Diagnostics.Debug.WriteLine($"[CRASH CreateWindow] {msg}");
 
-            var page = new ContentPage
-            {
-                BackgroundColor = Colors.Black,
-                Content = new ScrollView
-                {
-                    Content = new Label
-                    {
-                        Text              = $"LỖI KHỞI ĐỘNG:\n\n{msg}",
-                        TextColor         = Colors.Red,
-                        FontSize          = 11,
-                        Margin            = new Thickness(12),
-                        LineBreakMode     = LineBreakMode.WordWrap
-                    }
-                }
-            };
-            return new Window(page);
+        protected override Window CreateWindow(IActivationState? activationState)
+        {
+            return new Window(new AppShell());
+        }
+        protected override async void OnStart()
+        {
+            _ = await Permissions.RequestAsync<Permissions.LocationWhenInUse>();
+            _ = await Permissions.RequestAsync<Permissions.LocationAlways>();
         }
     }
 }

@@ -1,8 +1,8 @@
-using GpsGeoFence.Models;
+using MauiApp1.Models;
 using System;
 using System.Globalization;
 
-namespace GpsGeoFence.Pages.Controls
+namespace MauiApp1.Pages.Controls
 {
     public class ChartDataLabelConverter : IValueConverter
     {

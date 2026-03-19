@@ -1,4 +1,4 @@
-namespace GpsGeoFence.Models
+namespace MauiApp1.Models
 {
     public class ProjectsTags
     {

@@ -1,6 +1,6 @@
-using GpsGeoFence.Services;
+using MauiApp1.Services;
 
-namespace GpsGeoFence.Utilities
+namespace MauiApp1.Utilities
 {
     /// <summary>
     /// Task Utilities.

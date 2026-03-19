@@ -1,7 +1,7 @@
-using GpsGeoFence.Models;
+using MauiApp1.Models;
 using System.Windows.Input;
 
-namespace GpsGeoFence.Pages.Controls
+namespace MauiApp1.Pages.Controls
 {
     public partial class TaskView
     {
