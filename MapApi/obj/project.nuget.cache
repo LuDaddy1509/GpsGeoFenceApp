@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "KETT0PPHD8U=",
+  "dgSpecHash": "QSkrR03UIV8=",
   "success": true,
-  "projectFilePath": "C:\\Users\\lhnhan\\source\\repos\\MapApi\\MapApi.csproj",
+  "projectFilePath": "C:\\Users\\lhnhan\\source\\repos\\GpsGeoFenceApp\\MapApi\\MapApi.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\lhnhan\\.nuget\\packages\\azure.core\\1.47.1\\azure.core.1.47.1.nupkg.sha512",
     "C:\\Users\\lhnhan\\.nuget\\packages\\azure.identity\\1.14.2\\azure.identity.1.14.2.nupkg.sha512",
