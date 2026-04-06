@@ -1,16 +1,16 @@
-<api type="debug" assembly-name="MauiApp1" mvid="a7a1e3d82e4a47f2a2cd2c1d3491b205">
+<api type="debug" assembly-name="MauiApp1" mvid="52ec259f3df64fb280d7ffe533b3ea91">
   <java-to-managed>
     <entry java-name="crc64e632a077a20c694c/MainActivity" managed-name="MauiApp1.MainActivity, MauiApp1" managed-type-token-id="33554457" />
     <entry java-name="crc64e632a077a20c694c/MainApplication" managed-name="MauiApp1.MainApplication, MauiApp1" managed-type-token-id="33554458" />
-    <entry java-name="crc64e2862aff4a97f0b0/BackgroundLocationService" managed-name="MauiApp1.Platforms.Android.BackgroundLocationService, MauiApp1" managed-type-token-id="33554478" />
-    <entry java-name="crc64e2862aff4a97f0b0/GeofenceBroadcastReceiver" managed-name="MauiApp1.Platforms.Android.GeofenceBroadcastReceiver, MauiApp1" managed-type-token-id="33554479" />
-    <entry java-name="crc64a4c3491f9958177f/AndroidLocationService_CallbackImpl" managed-name="MauiApp1.Platforms.Android.Services.AndroidLocationService+CallbackImpl, MauiApp1" managed-type-token-id="33554595" />
+    <entry java-name="crc64e2862aff4a97f0b0/BackgroundLocationService" managed-name="MauiApp1.Platforms.Android.BackgroundLocationService, MauiApp1" managed-type-token-id="33554480" />
+    <entry java-name="crc64e2862aff4a97f0b0/GeofenceBroadcastReceiver" managed-name="MauiApp1.Platforms.Android.GeofenceBroadcastReceiver, MauiApp1" managed-type-token-id="33554481" />
+    <entry java-name="crc64a4c3491f9958177f/AndroidLocationService_CallbackImpl" managed-name="MauiApp1.Platforms.Android.Services.AndroidLocationService+CallbackImpl, MauiApp1" managed-type-token-id="33554603" />
   </java-to-managed>
   <managed-to-java>
     <entry java-name="crc64e632a077a20c694c/MainActivity" managed-name="MauiApp1.MainActivity, MauiApp1" managed-type-token-id="33554457" />
     <entry java-name="crc64e632a077a20c694c/MainApplication" managed-name="MauiApp1.MainApplication, MauiApp1" managed-type-token-id="33554458" />
-    <entry java-name="crc64e2862aff4a97f0b0/BackgroundLocationService" managed-name="MauiApp1.Platforms.Android.BackgroundLocationService, MauiApp1" managed-type-token-id="33554478" />
-    <entry java-name="crc64e2862aff4a97f0b0/GeofenceBroadcastReceiver" managed-name="MauiApp1.Platforms.Android.GeofenceBroadcastReceiver, MauiApp1" managed-type-token-id="33554479" />
-    <entry java-name="crc64a4c3491f9958177f/AndroidLocationService_CallbackImpl" managed-name="MauiApp1.Platforms.Android.Services.AndroidLocationService+CallbackImpl, MauiApp1" managed-type-token-id="33554595" />
+    <entry java-name="crc64e2862aff4a97f0b0/BackgroundLocationService" managed-name="MauiApp1.Platforms.Android.BackgroundLocationService, MauiApp1" managed-type-token-id="33554480" />
+    <entry java-name="crc64e2862aff4a97f0b0/GeofenceBroadcastReceiver" managed-name="MauiApp1.Platforms.Android.GeofenceBroadcastReceiver, MauiApp1" managed-type-token-id="33554481" />
+    <entry java-name="crc64a4c3491f9958177f/AndroidLocationService_CallbackImpl" managed-name="MauiApp1.Platforms.Android.Services.AndroidLocationService+CallbackImpl, MauiApp1" managed-type-token-id="33554603" />
   </managed-to-java>
 </api>

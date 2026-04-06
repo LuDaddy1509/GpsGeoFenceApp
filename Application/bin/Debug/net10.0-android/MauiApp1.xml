@@ -52,13 +52,6 @@
             Drops the Category table from the database.
             </summary>
         </member>
-        <member name="T:MauiApp1.Data.PoiDatabase">
-            <summary>
-            Quan ly POI bang SQLite local.
-            File DB: smarttourism.db3 trong FileSystem.AppDataDirectory
-            Tu dong tao bang + seed du lieu lan dau.
-            </summary>
-        </member>
         <member name="T:MauiApp1.Data.ProjectRepository">
             <summary>
             Repository class for managing projects in the database.
@@ -558,31 +551,6 @@
         </member>
         <member name="P:MauiApp1.PageModels.TaskDetailPageModel.DeleteCommand">
             <summary>Gets an <see cref="T:CommunityToolkit.Mvvm.Input.IAsyncRelayCommand"/> instance wrapping <see cref="M:MauiApp1.PageModels.TaskDetailPageModel.Delete"/>.</summary>
-        </member>
-        <member name="T:MauiApp1.Services.ApiService">
-             <summary>
-             Goi Backend API (MapApi) de:
-              - Lay / dong bo POI tu SQL Server vao SQLite local
-              - Ghi PlaybackLog len server sau khi phat thuyet minh
-            
-             URL:
-              - Emulator Android -> 10.0.2.2 (localhost cua may tinh)
-              - Thiet bi that  -> IP lan cua may tinh (VD: 192.168.1.x:5000)
-              - Production     -> domain thuc (https://...)
-             </summary>
-        </member>
-        <member name="M:MauiApp1.Services.ApiService.SyncPoisAsync">
-            <summary>
-            Lay POI moi tu API va luu vao SQLite.
-            - Lan dau: lay tat ca (since=null)
-            - Lan sau: chi lay POI co UpdatedAt > lan sync truoc
-            </summary>
-        </member>
-        <member name="M:MauiApp1.Services.ApiService.LogPlaybackAsync(System.String,System.String,System.Nullable{System.Int32},System.Boolean)">
-            <summary>
-            Ghi log phat thuyet minh len server.
-            Goi fire-and-forget, khong block UI.
-            </summary>
         </member>
         <member name="T:MauiApp1.Services.IErrorHandler">
             <summary>
