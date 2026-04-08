@@ -1,7 +1,7 @@
 ﻿using CommunityToolkit.Maui;
 using Microsoft.Extensions.Logging;
 using Microsoft.Maui.Controls.Maps;
-
+using Microsoft.AspNetCore.Server.Kestrel;
 using MauiApp1.Data;
 using MauiApp1.Pages;
 using MauiApp1.Platforms.Android.Services;
@@ -10,11 +10,8 @@ using MauiApp1.Services.Api;
 using MauiApp1.Services.Audio;
 using MauiApp1.Services.Narration;
 using MauiApp1.Services.Sync;
-
 using ZXing.Net.Maui.Controls;
-
 namespace MauiApp1;
-
 public static class MauiProgram
 {
     public static MauiApp CreateMauiApp()
@@ -56,46 +53,70 @@ public static class MauiProgram
         builder.Services.AddSingleton<SyncMetadataRepository>();
         builder.Services.AddSingleton<PoiNarrationCache>();
 
-        // ── API clients (emulator: 10.0.2.2) ─────────────────────────
-        builder.Services.AddHttpClient<PoiApiClient>(http =>
+        // ── API clients ───────────────────────────────────────────────
+        // Android emulator dùng 10.0.2.2, máy thật dùng IP LAN laptop.
+        // IP LAN của bạn: 192.168.1.121
+
+        static Uri GetApiBaseAddress()
         {
 #if ANDROID
-            http.BaseAddress = new Uri("http://10.0.2.2:5150");
+            // ✅ MÁY THẬT: dùng IP Wi‑Fi của laptop
+            // Khuyên DEV: dùng HTTP để khỏi lỗi chứng chỉ HTTPS dev
+            var httpBase = "http://192.168.1.121:5150/";
+            var httpsBase = "https://192.168.1.121:7286/";
+
+            // đổi true nếu bạn đã xử lý chứng chỉ HTTPS cho IP (SAN/cài trust)
+            var useHttps = false;
+
+            return new Uri(useHttps ? httpsBase : httpBase);
 #else
-            http.BaseAddress = new Uri("http://localhost:5150");
+    // Windows: gọi localhost
+    return new Uri("http://localhost:5150/");
 #endif
+        }
+        var apiBase = GetApiBaseAddress();
+
+        builder.Services.AddHttpClient<PoiApiClient>(http =>
+        {
+            http.BaseAddress = apiBase;
             http.Timeout = TimeSpan.FromSeconds(30);
         });
 
         builder.Services.AddHttpClient<PlaybackApiClient>(http =>
         {
-#if ANDROID
-            http.BaseAddress = new Uri("http://10.0.2.2:5150");
-#else
-            http.BaseAddress = new Uri("http://localhost:5150");
-#endif
+            http.BaseAddress = apiBase;
             http.Timeout = TimeSpan.FromSeconds(30);
         });
 
         builder.Services.AddHttpClient<PoiNarrationApiClient>(http =>
         {
-#if ANDROID
-            http.BaseAddress = new Uri("http://10.0.2.2:5150");
-#else
-            http.BaseAddress = new Uri("http://localhost:5150");
-#endif
+            http.BaseAddress = apiBase;
             http.Timeout = TimeSpan.FromSeconds(30);
         });
-
         // ── Sync engine ───────────────────────────────────────────────
         builder.Services.AddSingleton<PoiSyncService>();
-
         // ── Pages ─────────────────────────────────────────────────────
         builder.Services.AddSingleton<MapPage>();
         builder.Services.AddTransient<QrScanPage>();
-
+        builder.Services.AddHttpClient<SyncApiClient>(http =>
+        {
+#if ANDROID
+            http.BaseAddress = new Uri("http://localhost:5150");
+#else
+    http.BaseAddress = new Uri("http://localhost:5150");
+#endif
+            http.Timeout = TimeSpan.FromSeconds(30);
+        });
+        builder.Services.AddHttpClient<SyncPoiApiClient>(http =>
+        {
+#if ANDROID
+            http.BaseAddress = new Uri("http://localhost:5150"); // adb reverse
+#else
+    http.BaseAddress = new Uri("http://localhost:5150");
+#endif
+            http.Timeout = TimeSpan.FromSeconds(30);
+        });
         var app = builder.Build();
-
         // Init + AutoSync
         _ = Task.Run(async () =>
         {

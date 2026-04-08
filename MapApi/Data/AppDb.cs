@@ -9,7 +9,6 @@ public sealed class AppDb(DbContextOptions<AppDb> options) : DbContext(options)
     public DbSet<PoiNarration> PoiNarrations => Set<PoiNarration>();
     public DbSet<PoiMedia> PoiMedia => Set<PoiMedia>();
     public DbSet<PlaybackLog> PoiPlaybackLog => Set<PlaybackLog>();
-
     protected override void OnModelCreating(ModelBuilder b)
     {
         b.Entity<Poi>(e =>
@@ -24,8 +23,6 @@ public sealed class AppDb(DbContextOptions<AppDb> options) : DbContext(options)
             e.Property(x => x.NarrationText).HasMaxLength(4000);
             e.Property(x => x.AudioUrl).HasMaxLength(1000);
             e.Property(x => x.ImageUrl).HasMaxLength(1000);
-
-            // Option A: default language
             e.Property(x => x.Language).HasMaxLength(10);
 
             e.HasIndex(x => new { x.IsActive, x.Priority, x.Name })
