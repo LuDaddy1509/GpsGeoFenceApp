@@ -122,7 +122,6 @@ static byte ParseNarrationEventType(string? s)
 }
 static byte ParsePlaybackEventType(string? triggerType)
 {
-    // 0=Enter,1=Near,2=Tap,3=QR (QR chỉ dùng cho log)
     return (triggerType ?? "").Trim().ToUpperInvariant() switch
     {
         "ENTER" => 0,
