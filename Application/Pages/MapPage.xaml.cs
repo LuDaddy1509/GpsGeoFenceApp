@@ -234,20 +234,38 @@ public partial class MapPage : ContentPage
         }
     }
 
-    private async Task<bool> EnsureLocationPermissionsWithTimeoutAsync()
+        return null; // fallback -> NarrationManager dùng Poi.NarrationText
+    }
+    // ====== Lifecycle ======
+    protected override async void OnAppearing()
     {
-        try
+        base.OnAppearing();
+
+        _currentLang = LanguageService.Current;
+        RefreshLangBar();
+
+        MyMap.MoveToRegion(MapSpan.FromCenterAndRadius(_hcmCenter, Distance.FromKilometers(3)));
+
+        // ✅ Luôn load POI trước để pins không phụ thuộc quyền location
+        await ReloadPoisAsync();
+
+        // Xin quyền location chỉ để show user + tracking
+        if (!await EnsureLocationPermissionsAsync())
         {
-            var task = Permissions.RequestAsync<Permissions.LocationWhenInUse>();
-            var result = await task.WaitAsync(TimeSpan.FromSeconds(30));
-            return result == PermissionStatus.Granted;
+            System.Diagnostics.Debug.WriteLine("[Map] Location permission denied. Show pins only.");
+            return;
         }
-        catch (TimeoutException) { return false; }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"[Permissions] Error: {ex.Message}");
-            return false;
-        }
+
+        await MainThread.InvokeOnMainThreadAsync(() => MyMap.IsShowingUser = true);
+
+        _ = Task.Run(MoveToRealLocationAsync);
+
+        if (_pois.Count > 0)
+            await _geofence.RegisterAsync(_pois);
+        else
+            System.Diagnostics.Debug.WriteLine("[Geofence] Skip register: no POIs.");
+
+        StartTracking();
     }
 
     protected override void OnDisappearing()
@@ -257,14 +275,14 @@ public partial class MapPage : ContentPage
         _poiSync.StopAutoSync();
         base.OnDisappearing();
     }
-
     private async Task<bool> EnsureLocationPermissionsAsync()
     {
+        // ✅ Chỉ xin WhenInUse để tránh cảnh báo "only one set of permissions at a time"
         var when = await Permissions.RequestAsync<Permissions.LocationWhenInUse>();
         return when == PermissionStatus.Granted;
     }
 
-    // ── Load POIs — THÊM: vẽ vòng tròn radius cho mỗi POI ───────────
+    // ====== Load POIs ======
     private async Task ReloadPoisAsync()
     {
         try
@@ -301,10 +319,9 @@ public partial class MapPage : ContentPage
 
                         var started = DateTime.UtcNow;
                         var lang = LanguageService.Current;
-                        var narrationText = await GetNarrationTextAsync(p.Id, PoiEventType.Tap, lang);
-                        var poiText = await GetTranslatedPoiTextAsync(p, lang);
-                        var fullText = string.IsNullOrWhiteSpace(narrationText)
-                            ? poiText : $"{poiText}. {narrationText}";
+
+                        // ✅ HƯỚNG 2: lấy narration theo TAP + lang
+                        var text = await GetNarrationTextAsync(p.Id, PoiEventType.Tap, lang);
 
                         await _narration.HandleAsync(
                             new Announcement(p, PoiEventType.Tap, started, PreferredLanguage: lang),
@@ -474,6 +491,7 @@ public partial class MapPage : ContentPage
                     {
                         var started = DateTime.UtcNow;
                         var lang = LanguageService.Current;
+                        var text = await GetNarrationTextAsync(nearest.Id, PoiEventType.Near, lang, token);
 
                         var narrationText = await GetNarrationTextAsync(nearest.Id, PoiEventType.Near, lang, token);
                         var poiText = await GetTranslatedPoiTextAsync(nearest, lang, token);
@@ -653,95 +671,5 @@ public partial class MapPage : ContentPage
                     180, Easing.CubicOut);
                 break;
         }
-    }
-
-    // ── Narration helpers — GIỮ NGUYÊN HOÀN TOÀN ────────────────────
-    private static byte ToEventByte(PoiEventType t) => t switch
-    {
-        PoiEventType.Enter => 0,
-        PoiEventType.Near => 1,
-        PoiEventType.Tap => 2,
-        _ => 0
-    };
-
-    private static string ToEventName(PoiEventType t) => t switch
-    {
-        PoiEventType.Enter => "Enter",
-        PoiEventType.Near => "Near",
-        PoiEventType.Tap => "Tap",
-        _ => "Enter"
-    };
-
-    private async Task<string?> GetNarrationTextAsync(string poiId, PoiEventType evType,
-        string lang, CancellationToken ct = default)
-    {
-        try
-        {
-            var evByte = ToEventByte(evType);
-            var cached = await _narrationCache.GetAsync(poiId, evByte, lang);
-            if (!string.IsNullOrWhiteSpace(cached)) return cached;
-
-            if (Connectivity.Current.NetworkAccess == NetworkAccess.Internet)
-            {
-                var dto = await _narrationApi.GetNarrationAsync(poiId, lang, ToEventName(evType), ct);
-                var text = dto?.NarrationText;
-                if (!string.IsNullOrWhiteSpace(text))
-                {
-                    await _narrationCache.UpsertAsync(poiId, dto!.EventType, dto.Language, text);
-                    return text;
-                }
-            }
-        }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"[NarrationFetch] {ex.Message}");
-        }
-        return null;
-    }
-
-    private async Task<string?> GetTranslatedPoiTextAsync(Poi poi, string lang,
-        CancellationToken ct = default)
-    {
-        try
-        {
-            if (lang == "vi-VN")
-                return BuildPoiText(poi.Name, poi.Description);
-
-            var translatedName = await TranslateTextAsync(poi.Name, "vi-VN", lang, ct);
-            var translatedDesc = string.IsNullOrWhiteSpace(poi.Description)
-                ? null
-                : await TranslateTextAsync(poi.Description, "vi-VN", lang, ct);
-
-            return BuildPoiText(translatedName, translatedDesc);
-        }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"[TranslatePoi] Error: {ex.Message}");
-            return BuildPoiText(poi.Name, poi.Description);
-        }
-    }
-
-    private async Task<string?> TranslateTextAsync(string text, string fromLang,
-        string toLang, CancellationToken ct = default)
-    {
-        if (string.IsNullOrWhiteSpace(text) || fromLang == toLang) return text;
-        try
-        {
-            var translated = await _translator.TryTranslateAsync(text, toLang, fromLang, ct);
-            return translated ?? text;
-        }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"[TranslateTextAsync] Error: {ex.Message}");
-            return text;
-        }
-    }
-
-    private static string BuildPoiText(string? name, string? desc)
-    {
-        var parts = new List<string>();
-        if (!string.IsNullOrWhiteSpace(name)) parts.Add(name);
-        if (!string.IsNullOrWhiteSpace(desc)) parts.Add(desc);
-        return string.Join(". ", parts);
     }
 }
