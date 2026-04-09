@@ -28,7 +28,6 @@ public static class MauiProgram
                 fonts.AddFont("OpenSans-Regular.ttf", "OpenSansRegular");
                 fonts.AddFont("OpenSans-Semibold.ttf", "OpenSansSemibold");
             });
-
 #if DEBUG
         builder.Logging.AddDebug();
 #endif
@@ -47,17 +46,11 @@ public static class MauiProgram
         // ── Audio & Narration ─────────────────────────────────────────
         builder.Services.AddSingleton<AudioCache>();
         builder.Services.AddSingleton<NarrationManager>();
-
         // ── Local DB (SQLite) ─────────────────────────────────────────
         builder.Services.AddSingleton<PoiDatabase>();
         builder.Services.AddSingleton<SyncMetadataRepository>();
         builder.Services.AddSingleton<PoiNarrationCache>();
-
-        // ── API clients ───────────────────────────────────────────────
-        // Android emulator dùng 10.0.2.2, máy thật dùng IP LAN laptop.
-        // IP LAN của bạn: 192.168.1.121
-
-        static Uri GetApiBaseAddress()
+       static Uri GetApiBaseAddress()
         {
 #if ANDROID
             // ✅ MÁY THẬT: dùng IP Wi‑Fi của laptop
@@ -98,15 +91,18 @@ public static class MauiProgram
         // ── Pages ─────────────────────────────────────────────────────
         builder.Services.AddSingleton<MapPage>();
         builder.Services.AddTransient<QrScanPage>();
+        builder.Services.AddHttpClient<TranslatorClient>();
         builder.Services.AddHttpClient<SyncApiClient>(http =>
-        {
-#if ANDROID
-            http.BaseAddress = new Uri("http://localhost:5150");
-#else
-    http.BaseAddress = new Uri("http://localhost:5150");
-#endif
-            http.Timeout = TimeSpan.FromSeconds(30);
-        });
+{
+    http.BaseAddress = apiBase;
+    http.Timeout = TimeSpan.FromSeconds(30);
+});
+
+builder.Services.AddHttpClient<SyncPoiApiClient>(http =>
+{
+    http.BaseAddress = apiBase;
+    http.Timeout = TimeSpan.FromSeconds(30);
+});
         builder.Services.AddHttpClient<SyncPoiApiClient>(http =>
         {
 #if ANDROID

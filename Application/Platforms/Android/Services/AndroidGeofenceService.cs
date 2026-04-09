@@ -39,6 +39,13 @@ namespace MauiApp1.Platforms.Android.Services   // 👈 khớp đúng thư mục
         }
         public async Task RegisterAsync(IEnumerable<Poi> pois, bool initialTriggerOnEnter = true)
         {
+            // 1. KIỂM TRA MẢNG RỖNG: Tránh lỗi khi chưa tải được dữ liệu
+            if (pois == null || !pois.Any())
+            {
+                System.Diagnostics.Debug.WriteLine("[Geofence] Danh sách POI rỗng, bỏ qua đăng ký.");
+                return;
+            }
+
             _poiLookup = pois.ToDictionary(p => p.Id, p => p);
 
             var builder = new GeofencingRequest.Builder()
@@ -60,8 +67,17 @@ namespace MauiApp1.Platforms.Android.Services   // 👈 khớp đúng thư mục
 
                 list.Add(gf);
             }
+
             builder.AddGeofences(list);
-            await _client.AddGeofencesAsync(builder.Build(), _pendingIntent);
+            try
+            {
+                await _client.AddGeofencesAsync(builder.Build(), _pendingIntent);
+                System.Diagnostics.Debug.WriteLine("[Geofence] Đăng ký thành công!");
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[Geofence Error] Lỗi hệ thống: {ex.Message}");
+            }
         }
         public Task UnregisterAllAsync() => _client.RemoveGeofencesAsync(_pendingIntent);
 

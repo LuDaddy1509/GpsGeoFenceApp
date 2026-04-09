@@ -8,14 +8,14 @@
 
     <Grid RowDefinitions="*" ColumnDefinitions="*">
 
-        <!-- Map -->
+        <!-- Map — vòng tròn POI và dấu 3 chấm lịch sử được vẽ bằng MapElement/Pin trong code-behind -->
         <maps:Map x:Name="MyMap"
                   MapType="Street"
                   IsShowingUser="False"
                   IsScrollEnabled="True"
                   IsZoomEnabled="True" />
 
-        <!-- Thanh chọn ngôn ngữ (góc trên phải) -->
+        <!-- Thanh chọn ngôn ngữ (góc trên phải) — GIỮ NGUYÊN -->
         <HorizontalStackLayout
             x:Name="LangBar"
             Grid.Row="0"
@@ -25,55 +25,40 @@
             Spacing="4"
             ZIndex="5">
 
-            <!-- VI -->
             <Border x:Name="BtnVi" Padding="8,4" Background="#1976D2" Stroke="#00000000">
-                <Border.StrokeShape>
-                    <RoundRectangle CornerRadius="6" />
-                </Border.StrokeShape>
+                <Border.StrokeShape><RoundRectangle CornerRadius="6" /></Border.StrokeShape>
                 <Label Text="🇻🇳" FontSize="16" />
                 <Border.GestureRecognizers>
                     <TapGestureRecognizer Tapped="OnLangTapped" CommandParameter="vi-VN" />
                 </Border.GestureRecognizers>
             </Border>
 
-            <!-- EN -->
             <Border x:Name="BtnEn" Padding="8,4" Background="#333333" Stroke="#00000000">
-                <Border.StrokeShape>
-                    <RoundRectangle CornerRadius="6" />
-                </Border.StrokeShape>
+                <Border.StrokeShape><RoundRectangle CornerRadius="6" /></Border.StrokeShape>
                 <Label Text="🇺🇸" FontSize="16" />
                 <Border.GestureRecognizers>
                     <TapGestureRecognizer Tapped="OnLangTapped" CommandParameter="en-US" />
                 </Border.GestureRecognizers>
             </Border>
 
-            <!-- JA -->
             <Border x:Name="BtnJa" Padding="8,4" Background="#333333" Stroke="#00000000">
-                <Border.StrokeShape>
-                    <RoundRectangle CornerRadius="6" />
-                </Border.StrokeShape>
+                <Border.StrokeShape><RoundRectangle CornerRadius="6" /></Border.StrokeShape>
                 <Label Text="🇯🇵" FontSize="16" />
                 <Border.GestureRecognizers>
                     <TapGestureRecognizer Tapped="OnLangTapped" CommandParameter="ja-JP" />
                 </Border.GestureRecognizers>
             </Border>
 
-            <!-- KO -->
             <Border x:Name="BtnKo" Padding="8,4" Background="#333333" Stroke="#00000000">
-                <Border.StrokeShape>
-                    <RoundRectangle CornerRadius="6" />
-                </Border.StrokeShape>
+                <Border.StrokeShape><RoundRectangle CornerRadius="6" /></Border.StrokeShape>
                 <Label Text="🇰🇷" FontSize="16" />
                 <Border.GestureRecognizers>
                     <TapGestureRecognizer Tapped="OnLangTapped" CommandParameter="ko-KR" />
                 </Border.GestureRecognizers>
             </Border>
 
-            <!-- DE -->
             <Border x:Name="BtnDe" Padding="8,4" Background="#333333" Stroke="#00000000">
-                <Border.StrokeShape>
-                    <RoundRectangle CornerRadius="6" />
-                </Border.StrokeShape>
+                <Border.StrokeShape><RoundRectangle CornerRadius="6" /></Border.StrokeShape>
                 <Label Text="🇩🇪" FontSize="16" />
                 <Border.GestureRecognizers>
                     <TapGestureRecognizer Tapped="OnLangTapped" CommandParameter="de-DE" />
@@ -81,7 +66,7 @@
             </Border>
         </HorizontalStackLayout>
 
-        <!-- Bottom Sheet -->
+        <!-- Bottom Sheet — GIỮ NGUYÊN HOÀN TOÀN -->
         <Border x:Name="BottomSheet"
                 Padding="0"
                 Background="Transparent"
