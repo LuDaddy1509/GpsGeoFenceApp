@@ -6,6 +6,7 @@ using global::Android.Content;
 using global::Android.Gms.Location;
 using global::Android.OS;
 using global::MauiApp1.Services;
+using Microsoft.Maui.Devices;
 
 namespace MauiApp1.Platforms.Android.Services;
 public sealed class AndroidLocationService : ILocationService
@@ -18,12 +19,25 @@ public sealed class AndroidLocationService : ILocationService
         _client = LocationServices.GetFusedLocationProviderClient(global::Android.App.Application.Context);
     }
 
+    private static (long IntervalMs, int Priority) GetLocationParams()
+    {
+        var level = Battery.Default.ChargeLevel; // 0.0 → 1.0
+        return level switch
+        {
+            < 0.20 => (15_000, global::Android.Gms.Location.Priority.PriorityLowPower),
+            < 0.50 => (8_000,  global::Android.Gms.Location.Priority.PriorityBalancedPowerAccuracy),
+            _      => (5_000,  global::Android.Gms.Location.Priority.PriorityHighAccuracy)
+        };
+    }
+
     public void StartTracking(Action<double, double> onLocation)
     {
         if (_client == null) return;
 
+        var (intervalMs, priority) = GetLocationParams();
+
         var request = new global::Android.Gms.Location.LocationRequest
-            .Builder(global::Android.Gms.Location.Priority.PriorityBalancedPowerAccuracy, 5000) // 5s – Balanced
+            .Builder(priority, intervalMs)
             .SetMinUpdateDistanceMeters(10)
             .Build();
 

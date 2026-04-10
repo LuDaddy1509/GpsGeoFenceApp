@@ -422,19 +422,23 @@ public partial class MapPage : ContentPage
         catch (Exception ex) { System.Diagnostics.Debug.WriteLine($"[GPS] {ex.Message}"); }
     }
 
+    private void OnSharedLocationChanged(double lat, double lng)
+        => _userLocation = new Location(lat, lng);
+
     private void StartTracking()
     {
         _cts?.Cancel();
         _cts = new CancellationTokenSource();
         _ = TrackLoopAsync(_cts.Token);
-        _location.StartTracking((lat, lng) => _userLocation = new Location(lat, lng));
+        // Subscribe to location updates bridged from BackgroundLocationService
+        SharedLocationState.LocationChanged += OnSharedLocationChanged;
     }
 
     private void StopTracking()
     {
         _cts?.Cancel();
         _cts = null;
-        _location.StopTracking();
+        SharedLocationState.LocationChanged -= OnSharedLocationChanged;
     }
 
     // ── TrackLoop — THÊM: ghi trail + highlight vòng tròn ───────────

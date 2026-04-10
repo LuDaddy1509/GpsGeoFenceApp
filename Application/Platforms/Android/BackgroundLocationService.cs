@@ -44,8 +44,8 @@ public sealed class BackgroundLocationService : Service
 
         _locationService.StartTracking((lat, lng) =>
         {
-        System.Diagnostics.Debug.WriteLine($"[BG] {lat}, {lng}");
-
+            System.Diagnostics.Debug.WriteLine($"[BG] {lat}, {lng}");
+            SharedLocationState.Raise(lat, lng);
         });
 
         return StartCommandResult.Sticky;
