@@ -53,18 +53,16 @@ public static class MauiProgram
        static Uri GetApiBaseAddress()
         {
 #if ANDROID
-            // ✅ MÁY THẬT: dùng IP Wi‑Fi của laptop
-            // Khuyên DEV: dùng HTTP để khỏi lỗi chứng chỉ HTTPS dev
-            var httpBase = "http://192.168.1.121:5150/";
-            var httpsBase = "https://192.168.1.121:7286/";
+            // Emulator: 10.0.2.2 = host machine
+            // Máy thật: dùng IP Wi-Fi của laptop (hiện tại: 192.168.31.212)
+            var isEmulator = Android.OS.Build.Hardware?.Contains("ranchu") == true
+                          || Android.OS.Build.Model?.Contains("Emulator") == true
+                          || Android.OS.Build.Manufacturer?.Contains("Google") == true;
 
-            // đổi true nếu bạn đã xử lý chứng chỉ HTTPS cho IP (SAN/cài trust)
-            var useHttps = false;
-
-            return new Uri(useHttps ? httpsBase : httpBase);
+            var host = isEmulator ? "10.0.2.2" : "192.168.31.212";
+            return new Uri($"http://{host}:5150/");
 #else
-    // Windows: gọi localhost
-    return new Uri("http://localhost:5150/");
+            return new Uri("http://localhost:5150/");
 #endif
         }
         var apiBase = GetApiBaseAddress();
@@ -91,25 +89,21 @@ public static class MauiProgram
         // ── Pages ─────────────────────────────────────────────────────
         builder.Services.AddSingleton<MapPage>();
         builder.Services.AddTransient<QrScanPage>();
-        builder.Services.AddHttpClient<TranslatorClient>();
-        builder.Services.AddHttpClient<SyncApiClient>(http =>
-{
-    http.BaseAddress = apiBase;
-    http.Timeout = TimeSpan.FromSeconds(30);
-});
+        builder.Services.AddHttpClient<TranslatorClient>(http =>
+        {
+            http.BaseAddress = apiBase;
+            http.Timeout = TimeSpan.FromSeconds(30);
+        });
 
-builder.Services.AddHttpClient<SyncPoiApiClient>(http =>
-{
-    http.BaseAddress = apiBase;
-    http.Timeout = TimeSpan.FromSeconds(30);
-});
+        builder.Services.AddHttpClient<SyncApiClient>(http =>
+        {
+            http.BaseAddress = apiBase;
+            http.Timeout = TimeSpan.FromSeconds(30);
+        });
+
         builder.Services.AddHttpClient<SyncPoiApiClient>(http =>
         {
-#if ANDROID
-            http.BaseAddress = new Uri("http://localhost:5150"); // adb reverse
-#else
-    http.BaseAddress = new Uri("http://localhost:5150");
-#endif
+            http.BaseAddress = apiBase;
             http.Timeout = TimeSpan.FromSeconds(30);
         });
         var app = builder.Build();
