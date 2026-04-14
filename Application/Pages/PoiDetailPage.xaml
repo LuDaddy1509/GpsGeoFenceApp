@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    x:Class="MauiApp1.Pages.PoiDetailPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    Title="Chi tiết POI">
+
+    <ScrollView>
+        <VerticalStackLayout Padding="20" Spacing="14">
+            <Label x:Name="LoadingLabel"
+                   Text="Đang tải POI..."
+                   FontSize="14"
+                   IsVisible="False" />
+
+            <Label x:Name="ErrorLabel"
+                   TextColor="Red"
+                   FontSize="14"
+                   IsVisible="False" />
+
+            <Image x:Name="PoiImage"
+                   HeightRequest="220"
+                   Aspect="AspectFill"
+                   BackgroundColor="#EEEEEE" />
+
+            <Label x:Name="PoiNameLabel"
+                   FontSize="24"
+                   FontAttributes="Bold" />
+
+            <Label x:Name="PoiLanguageLabel"
+                   FontSize="13"
+                   TextColor="#666666" />
+
+            <HorizontalStackLayout Spacing="8">
+                <Border StrokeShape="RoundRectangle 8" BackgroundColor="#EDF4FF" Stroke="#B8D3FF" Padding="10,6">
+                    <Label x:Name="SyncStateLabel" FontSize="12" TextColor="#0D47A1" />
+                </Border>
+                <Border StrokeShape="RoundRectangle 8" BackgroundColor="#F4F4F4" Stroke="#DDDDDD" Padding="10,6">
+                    <Label x:Name="AudioCacheLabel" FontSize="12" />
+                </Border>
+            </HorizontalStackLayout>
+
+            <Label x:Name="PoiShortDescriptionLabel"
+                   FontSize="15"
+                   FontAttributes="Bold" />
+
+            <Label x:Name="PoiDescriptionLabel"
+                   FontSize="14"
+                   LineBreakMode="WordWrap" />
+
+            <Grid ColumnDefinitions="*,*" ColumnSpacing="10">
+                <Button Grid.Column="0"
+                        Text="Nghe thử"
+                        Clicked="OnPlayClicked" />
+                <Button Grid.Column="1"
+                        Text="Mở bản đồ"
+                        Clicked="OnOpenMapClicked" />
+            </Grid>
+
+            <Button Text="Chỉ đường"
+                    Clicked="OnDirectionsClicked" />
+
+            <Button Text="Quét QR khác"
+                    Clicked="OnScanQrClicked"
+                    BackgroundColor="Transparent"
+                    TextColor="{StaticResource Primary}" />
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

@@ -1,0 +1,33 @@
+﻿%%{init: {'theme':'base','themeVariables': {'fontSize':'22px','fontFamily':'Arial','primaryColor':'#F8FAFC','primaryTextColor':'#0F172A','primaryBorderColor':'#334155','lineColor':'#475569','secondaryColor':'#E2E8F0','tertiaryColor':'#FFFFFF'}, 'class': {'useMaxWidth': false}} }%%
+classDiagram
+    direction LR
+    class MapPage
+    class QrScanPage
+    class ILocationService
+    class IGeofenceService
+    class AndroidLocationService
+    class AndroidGeofenceService
+    class PoiDatabase
+    class PoiSyncService
+    class NarrationManager
+    class PoiApiClient
+    class PoiNarrationApiClient
+    class PlaybackApiClient
+    class AppDb
+    class PoiController
+    class PoiMediaController
+    class PoiManagementService
+
+    AndroidLocationService ..|> ILocationService
+    AndroidGeofenceService ..|> IGeofenceService
+    MapPage --> ILocationService
+    MapPage --> IGeofenceService
+    MapPage --> PoiDatabase
+    MapPage --> PoiSyncService
+    MapPage --> NarrationManager
+    MapPage --> PoiNarrationApiClient
+    MapPage --> PlaybackApiClient
+    PoiSyncService --> PoiApiClient
+    PoiController --> AppDb
+    PoiController --> PoiManagementService
+    PoiMediaController --> AppDb

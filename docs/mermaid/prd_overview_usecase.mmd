@@ -1,0 +1,17 @@
+﻿%%{init: {'theme':'base','themeVariables': {'fontSize':'22px','fontFamily':'Arial','primaryColor':'#F8FAFC','primaryTextColor':'#0F172A','primaryBorderColor':'#334155','lineColor':'#475569','secondaryColor':'#E2E8F0','tertiaryColor':'#FFFFFF'}} }%%
+flowchart TD
+    A[User opens app] --> B{Has session?}
+    B -->|No| C[Login or Register]
+    B -->|Yes| D[Open MapPage]
+    C --> D
+    D --> E[Sync POI from API]
+    E --> F[Store POI in SQLite]
+    F --> G[Show POI on map]
+    G --> H[Track GPS location]
+    H --> I{Near or Enter POI?}
+    I -->|Yes| J[Load narration]
+    J --> K[Play audio or TTS]
+    G --> L[Scan QR]
+    L --> M[Open POI or URL]
+    K --> N[Log history to backend]
+    M --> N

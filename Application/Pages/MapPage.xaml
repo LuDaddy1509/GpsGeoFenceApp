@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    x:Class="MauiApp1.Pages.MapPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:maps="clr-namespace:Microsoft.Maui.Controls.Maps;assembly=Microsoft.Maui.Controls.Maps"
+    Title="Bản đồ">
+
+    <Grid RowDefinitions="*" ColumnDefinitions="*">
+        <maps:Map x:Name="MyMap"
+                  MapType="Street"
+                  IsShowingUser="False"
+                  IsScrollEnabled="True"
+                  IsZoomEnabled="True" />
+
+        <Border
+            Margin="12,12,12,0"
+            Padding="12"
+            BackgroundColor="#F9FBFF"
+            Stroke="#D5E3FF"
+            VerticalOptions="Start"
+            ZIndex="5">
+            <Border.StrokeShape>
+                <RoundRectangle CornerRadius="12" />
+            </Border.StrokeShape>
+
+            <VerticalStackLayout Spacing="4">
+                <Label x:Name="SyncStatusLabel" FontSize="12" TextColor="#0D47A1" />
+                <Label x:Name="PermissionStatusLabel" FontSize="12" TextColor="#444444" />
+                <Label x:Name="LanguageStatusLabel" FontSize="12" TextColor="#444444" />
+                <Label x:Name="MapStateLabel" FontSize="13" FontAttributes="Bold" TextColor="#1A1A1A" />
+            </VerticalStackLayout>
+        </Border>
+
+        <Border
+            x:Name="CurrentPoiCard"
+            Margin="12"
+            Padding="14"
+            BackgroundColor="White"
+            Stroke="#E0E0E0"
+            VerticalOptions="End"
+            ZIndex="10"
+            IsVisible="False">
+            <Border.StrokeShape>
+                <RoundRectangle CornerRadius="16" />
+            </Border.StrokeShape>
+
+            <VerticalStackLayout Spacing="10">
+                <Label x:Name="CurrentPoiStatusLabel" FontSize="12" TextColor="#1976D2" />
+                <Label x:Name="CurrentPoiTitleLabel" FontSize="18" FontAttributes="Bold" />
+                <Label x:Name="CurrentPoiSummaryLabel" FontSize="13" TextColor="#555555" MaxLines="3" />
+
+                <Grid ColumnDefinitions="*,*" ColumnSpacing="10">
+                    <Button Grid.Column="0" Text="Xem chi tiết" Clicked="OnOpenDetailClicked" />
+                    <Button Grid.Column="1" Text="Mở bản đồ" Clicked="OnOpenInMapsClicked" />
+                </Grid>
+            </VerticalStackLayout>
+        </Border>
+
+        <VerticalStackLayout
+            x:Name="EmptyStatePanel"
+            IsVisible="False"
+            Spacing="8"
+            Padding="24"
+            HorizontalOptions="Center"
+            VerticalOptions="Center"
+            ZIndex="6">
+            <Label Text="Chưa có POI cục bộ"
+                   FontSize="20"
+                   FontAttributes="Bold"
+                   HorizontalOptions="Center" />
+            <Label Text="Hãy đồng bộ dữ liệu để bắt đầu trải nghiệm geofence và narration."
+                   FontSize="14"
+                   HorizontalTextAlignment="Center"
+                   HorizontalOptions="Center" />
+        </VerticalStackLayout>
+    </Grid>
+</ContentPage>

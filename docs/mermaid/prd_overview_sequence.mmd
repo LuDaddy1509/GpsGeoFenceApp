@@ -1,0 +1,24 @@
+﻿%%{init: {'theme':'base','themeVariables': {'fontSize':'22px','fontFamily':'Arial','primaryColor':'#F8FAFC','primaryTextColor':'#0F172A','primaryBorderColor':'#334155','lineColor':'#475569','secondaryColor':'#E2E8F0','tertiaryColor':'#FFFFFF'}, 'sequence': {'actorMargin':90,'messageMargin':40,'diagramMarginX':70,'diagramMarginY':50}} }%%
+sequenceDiagram
+    actor User as User
+    participant App as MapPage
+    participant Sync as PoiSyncService
+    participant API as MapApi
+    participant DB as SQLite
+    participant GPS as AndroidLocationService
+    participant Geo as AndroidGeofenceService
+    participant Narr as NarrationManager
+    participant History as PlaybackApiClient
+
+    User->>App: Open app and map
+    App->>Sync: SyncOnceAsync()
+    Sync->>API: GET /api/v1/pois
+    API-->>Sync: POI list
+    Sync->>DB: SaveAsync(poi)
+    App->>Geo: RegisterAsync(POIs)
+    App->>GPS: StartTracking()
+    GPS-->>App: Location update
+    App->>Narr: HandleAsync() when Near or Enter
+    Narr-->>User: Play audio or TTS
+    App->>History: LogAsync()
+    History->>API: POST /api/v1/history

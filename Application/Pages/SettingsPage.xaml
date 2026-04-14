@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    x:Class="MauiApp1.Pages.SettingsPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    Title="Cài đặt">
+
+    <ScrollView>
+        <VerticalStackLayout Padding="20" Spacing="16">
+            <Label Text="Tài khoản" FontSize="20" FontAttributes="Bold" />
+            <Label x:Name="UsernameLabel" FontSize="14" />
+
+            <Label Text="Ngôn ngữ" FontSize="20" FontAttributes="Bold" />
+            <Picker x:Name="LanguagePicker" Title="Chọn ngôn ngữ" SelectedIndexChanged="OnLanguageChanged" />
+            <Label x:Name="LanguageNoteLabel" FontSize="13" TextColor="#666666" />
+
+            <Label Text="Trạng thái dữ liệu" FontSize="20" FontAttributes="Bold" />
+            <Label x:Name="SyncStatusLabel" FontSize="14" />
+            <Label x:Name="PermissionStatusLabel" FontSize="14" />
+
+            <Grid ColumnDefinitions="*,*" ColumnSpacing="10">
+                <Button Grid.Column="0" Text="Đồng bộ ngay" Clicked="OnSyncClicked" />
+                <Button Grid.Column="1" Text="Mở bản đồ" Clicked="OnBackToMapClicked" />
+            </Grid>
+
+            <Button Text="Đăng xuất"
+                    Clicked="OnLogoutClicked"
+                    BackgroundColor="#FDECEC"
+                    TextColor="#B00020" />
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

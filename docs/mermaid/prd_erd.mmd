@@ -1,0 +1,48 @@
+﻿%%{init: {'theme':'base','themeVariables': {'fontSize':'22px','fontFamily':'Arial','primaryColor':'#F8FAFC','primaryTextColor':'#0F172A','primaryBorderColor':'#334155','lineColor':'#475569','secondaryColor':'#E2E8F0','tertiaryColor':'#FFFFFF'}} }%%
+erDiagram
+    Pois {
+        int Id PK
+        string Name
+        string Description
+        double Latitude
+        double Longitude
+        int RadiusMeters
+        int CooldownSeconds
+        bool IsActive
+        datetime CreatedAt
+        datetime UpdatedAt
+    }
+    PoiLanguage {
+        long IdLang PK
+        int IdPoi FK
+        string LanguageTag
+        string TextToSpeech
+    }
+    PoiMedia {
+        long Idm PK
+        int IdPoi FK
+        string Image
+        string MapLink
+        string Audio
+    }
+    Users {
+        guid UserId PK
+        string Username
+        string Mail
+        string PasswordHash
+        bool IsActive
+        datetime CreatedAt
+    }
+    HistoryPoi {
+        long Id PK
+        int IdPoi FK
+        guid IdUser FK
+        string PoiName
+        int Quantity
+        datetime LastVisitedAt
+        int TotalDurationSeconds
+    }
+    Pois ||--o{ PoiLanguage : has
+    Pois ||--o{ PoiMedia : has
+    Pois ||--o{ HistoryPoi : records
+    Users ||--o{ HistoryPoi : creates

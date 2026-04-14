@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    x:Class="MauiApp1.Pages.StartupPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    Title="Khởi động"
+    Shell.NavBarIsVisible="False">
+
+    <Grid Padding="24" RowDefinitions="*,Auto,*">
+        <VerticalStackLayout Grid.Row="1" Spacing="14" HorizontalOptions="Center" VerticalOptions="Center">
+            <Label Text="GpsGeoFenceApp"
+                   FontSize="28"
+                   FontAttributes="Bold"
+                   HorizontalOptions="Center" />
+
+            <Label x:Name="StatusLabel"
+                   Text="Đang khởi tạo ứng dụng..."
+                   FontSize="15"
+                   HorizontalOptions="Center"
+                   HorizontalTextAlignment="Center" />
+
+            <ActivityIndicator
+                x:Name="LoadingIndicator"
+                IsRunning="True"
+                IsVisible="True"
+                HorizontalOptions="Center" />
+        </VerticalStackLayout>
+    </Grid>
+</ContentPage>
