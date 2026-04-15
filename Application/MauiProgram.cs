@@ -1,9 +1,8 @@
 using CommunityToolkit.Maui;
 using Microsoft.Extensions.Logging;
 using Microsoft.Maui.Controls.Maps;
-
+using Syncfusion.Maui.Core.Hosting;
 using MauiApp1.Configuration;
-
 using ZXing.Net.Maui.Controls;
 
 namespace MauiApp1;
@@ -20,6 +19,7 @@ public static class MauiProgram
             .UseMauiMaps()
             .UseMauiCommunityToolkit()
             .UseBarcodeReader()
+            .ConfigureSyncfusionCore()
             .ConfigureFonts(fonts =>
             {
                 fonts.AddFont("OpenSans-Regular.ttf", "OpenSansRegular");

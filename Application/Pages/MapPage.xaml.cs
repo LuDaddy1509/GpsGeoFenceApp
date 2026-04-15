@@ -11,6 +11,7 @@ using Microsoft.Maui.Controls.Maps;
 using Microsoft.Maui.Devices.Sensors;
 using Microsoft.Maui.Maps;
 using Microsoft.Maui.Networking;
+using System.Linq;
 
 namespace MauiApp1.Pages;
 
@@ -38,6 +39,7 @@ public partial class MapPage : ContentPage
     private bool _isRuntimeBusy;
     private CancellationTokenSource? _cts;
     private Poi? _activePoi;
+    private Window? _lifecycleWindow;
 
     public MapPage(
         IGeofenceService geofence,
@@ -68,6 +70,7 @@ public partial class MapPage : ContentPage
         base.OnAppearing();
         _isVisible = true;
         SubscribeRuntimeEvents();
+        AttachWindowLifecycle();
         MyMap.MoveToRegion(MapSpan.FromCenterAndRadius(HcmCenter, Distance.FromKilometers(3)));
         _ = RefreshStatusAsync();
 
@@ -85,6 +88,7 @@ public partial class MapPage : ContentPage
     {
         _isVisible = false;
         UnsubscribeRuntimeEvents();
+        DetachWindowLifecycle();
         StopTracking();
         _runtimeService.StopAutoSync();
         base.OnDisappearing();
@@ -120,21 +124,39 @@ public partial class MapPage : ContentPage
         _geofence.OnPoiEvent += OnGeofenceEvent;
         _runtimeService.SyncCompleted -= OnSyncCompleted;
         _runtimeService.SyncCompleted += OnSyncCompleted;
-
-        if (Application.Current is not null)
-        {
-            Application.Current.Resumed -= OnAppResumed;
-            Application.Current.Resumed += OnAppResumed;
-        }
     }
 
     private void UnsubscribeRuntimeEvents()
     {
         _geofence.OnPoiEvent -= OnGeofenceEvent;
         _runtimeService.SyncCompleted -= OnSyncCompleted;
+    }
 
-        if (Application.Current is not null)
-            Application.Current.Resumed -= OnAppResumed;
+    private void AttachWindowLifecycle()
+    {
+        var window = Window ?? Application.Current?.Windows.FirstOrDefault();
+        if (window is null || ReferenceEquals(window, _lifecycleWindow))
+            return;
+
+        DetachWindowLifecycle();
+
+        _lifecycleWindow = window;
+        _lifecycleWindow.Resumed += OnWindowResumed;
+    }
+
+    private void DetachWindowLifecycle()
+    {
+        if (_lifecycleWindow is null)
+            return;
+
+        _lifecycleWindow.Resumed -= OnWindowResumed;
+        _lifecycleWindow = null;
+    }
+
+    private void OnWindowResumed(object? sender, EventArgs e)
+    {
+        if (_isVisible)
+            _ = ResumeRuntimeAsync();
     }
 
     private async Task InitializeMapAsync()
@@ -464,12 +486,6 @@ public partial class MapPage : ContentPage
         {
             ExitRuntime();
         }
-    }
-
-    private void OnAppResumed(object? sender, EventArgs e)
-    {
-        if (_isVisible)
-            _ = ResumeRuntimeAsync();
     }
 
     private IReadOnlyList<Poi> GetPoiSnapshot()
