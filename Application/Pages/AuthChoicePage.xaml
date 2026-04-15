@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    x:Class="MauiApp1.Pages.AuthChoicePage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    Title="Bat dau"
+    Shell.NavBarIsVisible="False">
+
+    <ContentPage.Background>
+        <LinearGradientBrush EndPoint="1,1">
+            <GradientStop Color="#0B0F18" Offset="0" />
+            <GradientStop Color="#131A26" Offset="0.55" />
+            <GradientStop Color="#1A1F2D" Offset="1" />
+        </LinearGradientBrush>
+    </ContentPage.Background>
+
+    <ScrollView>
+        <Grid Padding="24,36,24,28" RowDefinitions="Auto,*,Auto">
+            <VerticalStackLayout Grid.Row="0" Spacing="18" Margin="0,18,0,32">
+                <Border
+                    Background="{StaticResource AuthAccentSoftColor}"
+                    HorizontalOptions="Start"
+                    Padding="18"
+                    StrokeThickness="0"
+                    StrokeShape="RoundRectangle 24">
+                    <Grid ColumnDefinitions="Auto,*" ColumnSpacing="16">
+                        <Border
+                            Background="{StaticResource AuthAccentColor}"
+                            HeightRequest="72"
+                            Padding="14"
+                            StrokeThickness="0"
+                            StrokeShape="RoundRectangle 22"
+                            WidthRequest="72">
+                            <Label
+                                HorizontalOptions="Center"
+                                Style="{StaticResource Title1}"
+                                Text="G"
+                                TextColor="White"
+                                VerticalOptions="Center" />
+                        </Border>
+
+                        <VerticalStackLayout Grid.Column="1" Spacing="6" VerticalOptions="Center">
+                            <Label Text="GpsGeoFence" Style="{StaticResource AuthPageTitleStyle}" />
+                            <Label
+                                Text="Theo doi vung dia ly, phan hoi theo vi tri va quan ly hanh trinh mot cach truc quan."
+                                Style="{StaticResource AuthSubtitleStyle}" />
+                        </VerticalStackLayout>
+                    </Grid>
+                </Border>
+            </VerticalStackLayout>
+
+            <VerticalStackLayout Grid.Row="1" Spacing="22" VerticalOptions="End">
+                <Border Style="{StaticResource AuthCardContainerStyle}">
+                    <VerticalStackLayout Spacing="18">
+                        <Label Text="Bat dau theo cach phu hop voi ban" Style="{StaticResource Title3}" TextColor="#F7F8FD" />
+                        <Label
+                            Text="Flow xac thuc da duoc tach gon de moi buoc ro rang, de thao tac va phu hop demo tren mobile."
+                            Style="{StaticResource AuthSubtitleStyle}" />
+
+                        <Button
+                            Text="Dang nhap"
+                            Clicked="OnLoginClicked"
+                            Style="{StaticResource AuthPrimaryButtonStyle}" />
+
+                        <Button
+                            Text="Tao tai khoan"
+                            Clicked="OnRegisterClicked"
+                            Style="{StaticResource AuthInlineButtonStyle}" />
+                    </VerticalStackLayout>
+                </Border>
+            </VerticalStackLayout>
+
+            <Button
+                Grid.Row="2"
+                Margin="0,20,0,0"
+                HorizontalOptions="Center"
+                Text="Tiep tuc voi tu cach du khach"
+                Clicked="OnContinueAsGuestClicked"
+                Style="{StaticResource AuthSecondaryButtonStyle}" />
+        </Grid>
+    </ScrollView>
+</ContentPage>

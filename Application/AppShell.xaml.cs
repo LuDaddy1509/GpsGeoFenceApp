@@ -10,7 +10,6 @@ public partial class AppShell : Shell
     public AppShell()
     {
         InitializeComponent();
-        Routing.RegisterRoute(AppRoutes.Register, typeof(Pages.RegisterPage));
         Routing.RegisterRoute(AppRoutes.QrScan, typeof(Pages.QrScanPage));
         Routing.RegisterRoute(AppRoutes.PoiDetail, typeof(Pages.PoiDetailPage));
         Routing.RegisterRoute(AppRoutes.Settings, typeof(Pages.SettingsPage));

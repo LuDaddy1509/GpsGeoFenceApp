@@ -8,17 +8,27 @@
 
     <ShellContent
         Route="startup"
-        Title="Khởi động"
+        Title="Khoi dong"
         ContentTemplate="{DataTemplate pages:StartupPage}" />
 
     <ShellContent
+        Route="auth-choice"
+        Title="Bat dau"
+        ContentTemplate="{DataTemplate pages:AuthChoicePage}" />
+
+    <ShellContent
         Route="login"
-        Title="Đăng nhập"
+        Title="Dang nhap"
         ContentTemplate="{DataTemplate pages:LoginPage}" />
 
     <ShellContent
+        Route="register"
+        Title="Dang ky"
+        ContentTemplate="{DataTemplate pages:RegisterPage}" />
+
+    <ShellContent
         Route="map"
-        Title="Bản đồ"
+        Title="Ban do"
         ContentTemplate="{DataTemplate pages:MapPage}" />
 
 </Shell>

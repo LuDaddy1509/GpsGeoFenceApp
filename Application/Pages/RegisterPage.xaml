@@ -3,46 +3,158 @@
     x:Class="MauiApp1.Pages.RegisterPage"
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
-    Title="Đăng ký tài khoản">
+    Title="Tao tai khoan"
+    Shell.NavBarIsVisible="False">
+
+    <ContentPage.Background>
+        <LinearGradientBrush EndPoint="1,1">
+            <GradientStop Color="#0A0F18" Offset="0" />
+            <GradientStop Color="#121927" Offset="0.55" />
+            <GradientStop Color="#1A2132" Offset="1" />
+        </LinearGradientBrush>
+    </ContentPage.Background>
 
     <ScrollView>
-        <VerticalStackLayout Padding="32" Spacing="14" VerticalOptions="Center">
+        <VerticalStackLayout Padding="24,28,24,32" Spacing="22">
+            <Button
+                HorizontalOptions="Start"
+                Text="Quay lai"
+                Clicked="OnBackClicked"
+                Style="{StaticResource AuthSecondaryButtonStyle}" />
 
-            <Label Text="Tạo tài khoản" FontSize="24" FontAttributes="Bold"
-                   HorizontalOptions="Center" Margin="0,0,0,16" />
+            <VerticalStackLayout Spacing="10" Margin="0,12,0,0">
+                <Label Text="Tao tai khoan" Style="{StaticResource AuthPageTitleStyle}" />
+                <Label
+                    Text="Thiet lap tai khoan moi de dong bo du lieu vung dia ly va trai nghiem day du cua ung dung."
+                    Style="{StaticResource AuthSubtitleStyle}" />
+            </VerticalStackLayout>
 
-            <Label Text="Tên đăng nhập" FontSize="14" />
-            <Entry x:Name="UsernameEntry" Placeholder="Tối thiểu 3 ký tự" ReturnType="Next" />
+            <Border Style="{StaticResource AuthCardContainerStyle}">
+                <VerticalStackLayout Spacing="18">
+                    <VerticalStackLayout Spacing="8">
+                        <Label Text="Ho va ten" Style="{StaticResource AuthFieldLabelStyle}" />
+                        <Border Style="{StaticResource AuthFieldContainerStyle}">
+                            <Grid ColumnDefinitions="Auto,*" ColumnSpacing="12">
+                                <Label Text="A" Style="{StaticResource Body1Strong}" TextColor="{StaticResource AuthSecondaryTextColor}" VerticalOptions="Center" />
+                                <Entry
+                                    x:Name="FullNameEntry"
+                                    Grid.Column="1"
+                                    Placeholder="Nguyen Van A"
+                                    ReturnType="Next"
+                                    Style="{StaticResource AuthEntryStyle}" />
+                            </Grid>
+                        </Border>
+                        <Label
+                            x:Name="FullNameValidationLabel"
+                            Style="{StaticResource AuthValidationStyle}" />
+                    </VerticalStackLayout>
 
-            <Label Text="Email" FontSize="14" />
-            <Entry x:Name="MailEntry" Placeholder="example@email.com"
-                   Keyboard="Email" ReturnType="Next" />
+                    <VerticalStackLayout Spacing="8">
+                        <Label Text="Email" Style="{StaticResource AuthFieldLabelStyle}" />
+                        <Border Style="{StaticResource AuthFieldContainerStyle}">
+                            <Grid ColumnDefinitions="Auto,*" ColumnSpacing="12">
+                                <Label Text="@" Style="{StaticResource Body1Strong}" TextColor="{StaticResource AuthSecondaryTextColor}" VerticalOptions="Center" />
+                                <Entry
+                                    x:Name="MailEntry"
+                                    Grid.Column="1"
+                                    Keyboard="Email"
+                                    Placeholder="you@example.com"
+                                    ReturnType="Next"
+                                    Style="{StaticResource AuthEntryStyle}" />
+                            </Grid>
+                        </Border>
+                        <Label
+                            x:Name="MailValidationLabel"
+                            Style="{StaticResource AuthValidationStyle}" />
+                    </VerticalStackLayout>
 
-            <Label Text="Mật khẩu" FontSize="14" />
-            <Entry x:Name="PasswordEntry" Placeholder="Tối thiểu 6 ký tự"
-                   IsPassword="True" ReturnType="Next" />
+                    <VerticalStackLayout Spacing="8">
+                        <Label Text="Mat khau" Style="{StaticResource AuthFieldLabelStyle}" />
+                        <Border Style="{StaticResource AuthFieldContainerStyle}">
+                            <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="12">
+                                <Label Text="*" Style="{StaticResource Body1Strong}" TextColor="{StaticResource AuthSecondaryTextColor}" VerticalOptions="Center" />
+                                <Entry
+                                    x:Name="PasswordEntry"
+                                    Grid.Column="1"
+                                    IsPassword="True"
+                                    Placeholder="Toi thieu 6 ky tu"
+                                    ReturnType="Next"
+                                    Style="{StaticResource AuthEntryStyle}" />
+                                <Button
+                                    x:Name="TogglePasswordButton"
+                                    Grid.Column="2"
+                                    Clicked="OnTogglePasswordClicked"
+                                    Style="{StaticResource AuthSecondaryButtonStyle}"
+                                    Text="Hien"
+                                    VerticalOptions="Center" />
+                            </Grid>
+                        </Border>
+                        <Label
+                            x:Name="PasswordValidationLabel"
+                            Style="{StaticResource AuthValidationStyle}" />
+                    </VerticalStackLayout>
 
-            <Label Text="Xác nhận mật khẩu" FontSize="14" />
-            <Entry x:Name="ConfirmEntry" Placeholder="Nhập lại mật khẩu"
-                   IsPassword="True" ReturnType="Done" />
+                    <VerticalStackLayout Spacing="8">
+                        <Label Text="Xac nhan mat khau" Style="{StaticResource AuthFieldLabelStyle}" />
+                        <Border Style="{StaticResource AuthFieldContainerStyle}">
+                            <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="12">
+                                <Label Text="*" Style="{StaticResource Body1Strong}" TextColor="{StaticResource AuthSecondaryTextColor}" VerticalOptions="Center" />
+                                <Entry
+                                    x:Name="ConfirmEntry"
+                                    Grid.Column="1"
+                                    IsPassword="True"
+                                    Placeholder="Nhap lai mat khau"
+                                    ReturnType="Done"
+                                    Style="{StaticResource AuthEntryStyle}" />
+                                <Button
+                                    x:Name="ToggleConfirmPasswordButton"
+                                    Grid.Column="2"
+                                    Clicked="OnToggleConfirmPasswordClicked"
+                                    Style="{StaticResource AuthSecondaryButtonStyle}"
+                                    Text="Hien"
+                                    VerticalOptions="Center" />
+                            </Grid>
+                        </Border>
+                        <Label
+                            x:Name="ConfirmValidationLabel"
+                            Style="{StaticResource AuthValidationStyle}" />
+                    </VerticalStackLayout>
 
-            <Label x:Name="ErrorLabel" TextColor="Red" FontSize="13"
-                   IsVisible="False" HorizontalOptions="Center" />
+                    <Label
+                        x:Name="ErrorLabel"
+                        Style="{StaticResource AuthValidationStyle}" />
 
-            <Button x:Name="RegisterBtn"
-                    Text="Đăng ký"
-                    Clicked="OnRegisterClicked"
-                    Margin="0,8,0,0"
-                    HeightRequest="48" />
+                    <Label
+                        x:Name="SuccessLabel"
+                        Style="{StaticResource AuthSuccessStyle}" />
 
-            <Button Text="Đã có tài khoản? Đăng nhập"
+                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12" VerticalOptions="Center">
+                        <Button
+                            x:Name="RegisterBtn"
+                            Grid.Column="0"
+                            Clicked="OnRegisterClicked"
+                            Style="{StaticResource AuthPrimaryButtonStyle}"
+                            Text="Tao tai khoan" />
+
+                        <ActivityIndicator
+                            x:Name="LoadingIndicator"
+                            Grid.Column="1"
+                            HeightRequest="28"
+                            IsRunning="False"
+                            IsVisible="False"
+                            VerticalOptions="Center"
+                            WidthRequest="28" />
+                    </Grid>
+                </VerticalStackLayout>
+            </Border>
+
+            <HorizontalStackLayout HorizontalOptions="Center" Spacing="4">
+                <Label Text="Da co tai khoan?" Style="{StaticResource AuthHintStyle}" VerticalOptions="Center" />
+                <Button
+                    Text="Dang nhap"
                     Clicked="OnBackToLoginClicked"
-                    BackgroundColor="Transparent"
-                    TextColor="{StaticResource Primary}" />
-
-            <ActivityIndicator x:Name="LoadingIndicator"
-                               IsRunning="False" IsVisible="False"
-                               HorizontalOptions="Center" />
+                    Style="{StaticResource AuthSecondaryButtonStyle}" />
+            </HorizontalStackLayout>
         </VerticalStackLayout>
     </ScrollView>
 </ContentPage>

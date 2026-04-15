@@ -3,46 +3,115 @@
     x:Class="MauiApp1.Pages.LoginPage"
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
-    Title="Đăng nhập"
-    BackgroundColor="{AppThemeBinding Light={StaticResource White}, Dark={StaticResource Black}}">
+    Title="Dang nhap"
+    Shell.NavBarIsVisible="False">
+
+    <ContentPage.Background>
+        <LinearGradientBrush EndPoint="1,1">
+            <GradientStop Color="#0A0E17" Offset="0" />
+            <GradientStop Color="#111725" Offset="0.55" />
+            <GradientStop Color="#171D2B" Offset="1" />
+        </LinearGradientBrush>
+    </ContentPage.Background>
 
     <ScrollView>
-        <VerticalStackLayout Padding="32" Spacing="16" VerticalOptions="Center">
+        <VerticalStackLayout Padding="24,28,24,32" Spacing="22">
+            <Button
+                HorizontalOptions="Start"
+                Text="Quay lai"
+                Clicked="OnBackClicked"
+                Style="{StaticResource AuthSecondaryButtonStyle}" />
 
-            <Label Text="GPS Guide" FontSize="28" FontAttributes="Bold"
-                   HorizontalOptions="Center" Margin="0,0,0,20" />
+            <VerticalStackLayout Spacing="10" Margin="0,12,0,0">
+                <Label Text="Chao mung tro lai" Style="{StaticResource AuthPageTitleStyle}" />
+                <Label
+                    Text="Dang nhap de tiep tuc theo doi geofence, du lieu vi tri va lich su hanh trinh cua ban."
+                    Style="{StaticResource AuthSubtitleStyle}" />
+            </VerticalStackLayout>
 
-            <Label Text="Tên đăng nhập" FontSize="14" />
-            <Entry x:Name="UsernameEntry"
-                   Placeholder="Nhập tên đăng nhập"
-                   ReturnType="Next" />
+            <Border Style="{StaticResource AuthCardContainerStyle}">
+                <VerticalStackLayout Spacing="18">
+                    <VerticalStackLayout Spacing="8">
+                        <Label Text="Email" Style="{StaticResource AuthFieldLabelStyle}" />
+                        <Border Style="{StaticResource AuthFieldContainerStyle}">
+                            <Grid ColumnDefinitions="Auto,*" ColumnSpacing="12">
+                                <Label Text="@" Style="{StaticResource Body1Strong}" TextColor="{StaticResource AuthSecondaryTextColor}" VerticalOptions="Center" />
+                                <Entry
+                                    x:Name="EmailEntry"
+                                    Grid.Column="1"
+                                    Keyboard="Email"
+                                    Placeholder="you@example.com"
+                                    ReturnType="Next"
+                                    Style="{StaticResource AuthEntryStyle}" />
+                            </Grid>
+                        </Border>
+                        <Label
+                            x:Name="EmailValidationLabel"
+                            Style="{StaticResource AuthValidationStyle}" />
+                    </VerticalStackLayout>
 
-            <Label Text="Mật khẩu" FontSize="14" />
-            <Entry x:Name="PasswordEntry"
-                   Placeholder="Nhập mật khẩu"
-                   IsPassword="True"
-                   ReturnType="Done"
-                   ReturnCommand="{Binding Source={x:Reference LoginBtn}, Path=Command}" />
+                    <VerticalStackLayout Spacing="8">
+                        <Label Text="Mat khau" Style="{StaticResource AuthFieldLabelStyle}" />
+                        <Border Style="{StaticResource AuthFieldContainerStyle}">
+                            <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="12">
+                                <Label Text="*" Style="{StaticResource Body1Strong}" TextColor="{StaticResource AuthSecondaryTextColor}" VerticalOptions="Center" />
+                                <Entry
+                                    x:Name="PasswordEntry"
+                                    Grid.Column="1"
+                                    IsPassword="True"
+                                    Placeholder="Nhap mat khau"
+                                    ReturnType="Done"
+                                    ReturnCommand="{Binding Source={x:Reference LoginBtn}, Path=Command}"
+                                    Style="{StaticResource AuthEntryStyle}" />
+                                <Button
+                                    x:Name="TogglePasswordButton"
+                                    Grid.Column="2"
+                                    Clicked="OnTogglePasswordClicked"
+                                    Style="{StaticResource AuthSecondaryButtonStyle}"
+                                    Text="Hien"
+                                    VerticalOptions="Center" />
+                            </Grid>
+                        </Border>
+                        <Label
+                            x:Name="PasswordValidationLabel"
+                            Style="{StaticResource AuthValidationStyle}" />
+                    </VerticalStackLayout>
 
-            <Label x:Name="ErrorLabel" TextColor="Red" FontSize="13"
-                   IsVisible="False" HorizontalOptions="Center" />
+                    <Label
+                        x:Name="ErrorLabel"
+                        Style="{StaticResource AuthValidationStyle}" />
 
-            <Button x:Name="LoginBtn"
-                    Text="Đăng nhập"
-                    Clicked="OnLoginClicked"
-                    Margin="0,8,0,0"
-                    HeightRequest="48" />
+                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12" VerticalOptions="Center">
+                        <Button
+                            x:Name="LoginBtn"
+                            Grid.Column="0"
+                            Clicked="OnLoginClicked"
+                            Style="{StaticResource AuthPrimaryButtonStyle}"
+                            Text="Dang nhap" />
+
+                        <ActivityIndicator
+                            x:Name="LoadingIndicator"
+                            Grid.Column="1"
+                            HeightRequest="28"
+                            IsRunning="False"
+                            IsVisible="False"
+                            VerticalOptions="Center"
+                            WidthRequest="28" />
+                    </Grid>
+
+                    <Label
+                        Text="Ban co the dung email da dang ky hoac thong tin dang nhap hien co cua he thong."
+                        Style="{StaticResource AuthHintStyle}" />
+                </VerticalStackLayout>
+            </Border>
 
             <HorizontalStackLayout HorizontalOptions="Center" Spacing="4">
-                <Label Text="Chưa có tài khoản?" VerticalOptions="Center" />
-                <Button Text="Đăng ký" Clicked="OnRegisterClicked"
-                        BackgroundColor="Transparent"
-                        TextColor="{StaticResource Primary}" />
+                <Label Text="Chua co tai khoan?" Style="{StaticResource AuthHintStyle}" VerticalOptions="Center" />
+                <Button
+                    Text="Dang ky"
+                    Clicked="OnRegisterClicked"
+                    Style="{StaticResource AuthSecondaryButtonStyle}" />
             </HorizontalStackLayout>
-
-            <ActivityIndicator x:Name="LoadingIndicator"
-                               IsRunning="False" IsVisible="False"
-                               HorizontalOptions="Center" />
         </VerticalStackLayout>
     </ScrollView>
 </ContentPage>

@@ -1,78 +1,94 @@
 using MauiApp1.Services.Api;
+using MauiApp1.Services.Navigation;
 
 namespace MauiApp1.Pages;
 
 public partial class RegisterPage : ContentPage
 {
     private readonly AuthApiClient _auth;
+    private readonly AppSessionNavigator _sessionNavigator;
+    private bool _isBusy;
+    private bool _isPasswordVisible;
+    private bool _isConfirmPasswordVisible;
 
-    public RegisterPage(AuthApiClient auth)
+    public RegisterPage(AuthApiClient auth, AppSessionNavigator sessionNavigator)
     {
         InitializeComponent();
         _auth = auth;
+        _sessionNavigator = sessionNavigator;
     }
 
     private async void OnRegisterClicked(object sender, EventArgs e)
     {
+        if (_isBusy)
+            return;
+
         try
         {
-            ErrorLabel.IsVisible = false;
-            var username = UsernameEntry.Text?.Trim() ?? "";
-            var mail = MailEntry.Text?.Trim() ?? "";
-            var password = PasswordEntry.Text ?? "";
-            var confirm = ConfirmEntry.Text ?? "";
+            ClearValidationMessages();
+
+            var username = FullNameEntry.Text?.Trim() ?? string.Empty;
+            var mail = MailEntry.Text?.Trim() ?? string.Empty;
+            var password = PasswordEntry.Text ?? string.Empty;
+            var confirm = ConfirmEntry.Text ?? string.Empty;
 
             if (username.Length < 3)
             {
-                ErrorLabel.Text = "Tên đăng nhập phải có ít nhất 3 ký tự";
-                ErrorLabel.IsVisible = true;
-                return;
+                FullNameValidationLabel.Text = "Vui long nhap ho va ten voi it nhat 3 ky tu.";
+                FullNameValidationLabel.IsVisible = true;
             }
+
             if (!mail.Contains('@'))
             {
-                ErrorLabel.Text = "Email không hợp lệ";
-                ErrorLabel.IsVisible = true;
-                return;
+                MailValidationLabel.Text = "Email chua dung dinh dang.";
+                MailValidationLabel.IsVisible = true;
             }
+
             if (password.Length < 6)
             {
-                ErrorLabel.Text = "Mật khẩu phải có ít nhất 6 ký tự";
-                ErrorLabel.IsVisible = true;
-                return;
+                PasswordValidationLabel.Text = "Mat khau can it nhat 6 ky tu.";
+                PasswordValidationLabel.IsVisible = true;
             }
+
             if (password != confirm)
             {
-                ErrorLabel.Text = "Mật khẩu xác nhận không khớp";
-                ErrorLabel.IsVisible = true;
+                ConfirmValidationLabel.Text = "Mat khau xac nhan chua khop.";
+                ConfirmValidationLabel.IsVisible = true;
+            }
+
+            if (FullNameValidationLabel.IsVisible ||
+                MailValidationLabel.IsVisible ||
+                PasswordValidationLabel.IsVisible ||
+                ConfirmValidationLabel.IsVisible)
+            {
                 return;
             }
 
-            RegisterBtn.IsEnabled = false;
-            LoadingIndicator.IsVisible = true;
-            LoadingIndicator.IsRunning = true;
+            SetBusyState(true, "Dang tao...");
 
             var ok = await _auth.RegisterAsync(username, mail, password);
             if (!ok)
             {
-                ErrorLabel.Text = "Đăng ký thất bại. Tên đăng nhập hoặc email đã tồn tại.";
+                ErrorLabel.Text = "Khong the tao tai khoan. Email hoac thong tin tai khoan co the da ton tai.";
                 ErrorLabel.IsVisible = true;
                 return;
             }
 
-            await DisplayAlert("Thành công", "Tài khoản đã được tạo. Vui lòng đăng nhập.", "OK");
-            await Shell.Current.GoToAsync("..");
+            SuccessLabel.Text = "Tao tai khoan thanh cong. Dang chuyen sang man hinh dang nhap...";
+            SuccessLabel.IsVisible = true;
+
+            await Task.Delay(900);
+            await _sessionNavigator.GoToLoginAsync();
         }
         catch (Exception ex)
         {
-            ErrorLabel.Text = "Lỗi kết nối. Vui lòng thử lại.";
+            ErrorLabel.Text = "Loi ket noi. Vui long thu lai sau it phut.";
             ErrorLabel.IsVisible = true;
             System.Diagnostics.Debug.WriteLine($"[Register] {ex.Message}");
         }
         finally
         {
-            RegisterBtn.IsEnabled = true;
-            LoadingIndicator.IsRunning = false;
-            LoadingIndicator.IsVisible = false;
+            SetBusyState(false, "Tao tai khoan");
         }
     }
 
@@ -80,11 +96,56 @@ public partial class RegisterPage : ContentPage
     {
         try
         {
-            await Shell.Current.GoToAsync("..");
+            await _sessionNavigator.GoToLoginAsync();
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"[Register] Back: {ex.Message}");
+            System.Diagnostics.Debug.WriteLine($"[Register] Back to login: {ex.Message}");
         }
+    }
+
+    private async void OnBackClicked(object sender, EventArgs e)
+    {
+        try
+        {
+            await _sessionNavigator.GoToAuthChoiceAsync();
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[Register] Navigate back: {ex.Message}");
+        }
+    }
+
+    private void OnTogglePasswordClicked(object sender, EventArgs e)
+    {
+        _isPasswordVisible = !_isPasswordVisible;
+        PasswordEntry.IsPassword = !_isPasswordVisible;
+        TogglePasswordButton.Text = _isPasswordVisible ? "An" : "Hien";
+    }
+
+    private void OnToggleConfirmPasswordClicked(object sender, EventArgs e)
+    {
+        _isConfirmPasswordVisible = !_isConfirmPasswordVisible;
+        ConfirmEntry.IsPassword = !_isConfirmPasswordVisible;
+        ToggleConfirmPasswordButton.Text = _isConfirmPasswordVisible ? "An" : "Hien";
+    }
+
+    private void ClearValidationMessages()
+    {
+        ErrorLabel.IsVisible = false;
+        SuccessLabel.IsVisible = false;
+        FullNameValidationLabel.IsVisible = false;
+        MailValidationLabel.IsVisible = false;
+        PasswordValidationLabel.IsVisible = false;
+        ConfirmValidationLabel.IsVisible = false;
+    }
+
+    private void SetBusyState(bool isBusy, string buttonText)
+    {
+        _isBusy = isBusy;
+        RegisterBtn.IsEnabled = !isBusy;
+        RegisterBtn.Text = buttonText;
+        LoadingIndicator.IsVisible = isBusy;
+        LoadingIndicator.IsRunning = isBusy;
     }
 }

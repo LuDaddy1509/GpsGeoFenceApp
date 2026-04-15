@@ -1,4 +1,3 @@
-using MauiApp1.Configuration;
 using MauiApp1.Services.Api;
 using MauiApp1.Services.Navigation;
 
@@ -8,6 +7,8 @@ public partial class LoginPage : ContentPage
 {
     private readonly AuthApiClient _auth;
     private readonly AppSessionNavigator _sessionNavigator;
+    private bool _isBusy;
+    private bool _isPasswordVisible;
 
     public LoginPage(AuthApiClient auth, AppSessionNavigator sessionNavigator)
     {
@@ -18,27 +19,37 @@ public partial class LoginPage : ContentPage
 
     private async void OnLoginClicked(object sender, EventArgs e)
     {
+        if (_isBusy)
+            return;
+
         try
         {
-            ErrorLabel.IsVisible = false;
-            var username = UsernameEntry.Text?.Trim() ?? "";
-            var password = PasswordEntry.Text ?? "";
+            ClearValidationMessages();
 
-            if (string.IsNullOrEmpty(username) || string.IsNullOrEmpty(password))
+            var identifier = EmailEntry.Text?.Trim() ?? string.Empty;
+            var password = PasswordEntry.Text ?? string.Empty;
+
+            if (string.IsNullOrWhiteSpace(identifier))
             {
-                ErrorLabel.Text = "Vui lòng nhập tên đăng nhập và mật khẩu";
-                ErrorLabel.IsVisible = true;
-                return;
+                EmailValidationLabel.Text = "Vui long nhap email de tiep tuc.";
+                EmailValidationLabel.IsVisible = true;
             }
 
-            LoginBtn.IsEnabled = false;
-            LoadingIndicator.IsVisible = true;
-            LoadingIndicator.IsRunning = true;
+            if (string.IsNullOrWhiteSpace(password))
+            {
+                PasswordValidationLabel.Text = "Vui long nhap mat khau.";
+                PasswordValidationLabel.IsVisible = true;
+            }
 
-            var result = await _auth.LoginAsync(username, password);
+            if (EmailValidationLabel.IsVisible || PasswordValidationLabel.IsVisible)
+                return;
+
+            SetBusyState(true, "Dang dang nhap...");
+
+            var result = await _auth.LoginAsync(identifier, password);
             if (result is null)
             {
-                ErrorLabel.Text = "Tên đăng nhập hoặc mật khẩu không đúng";
+                ErrorLabel.Text = "Thong tin dang nhap khong dung. Vui long kiem tra lai.";
                 ErrorLabel.IsVisible = true;
                 return;
             }
@@ -48,15 +59,13 @@ public partial class LoginPage : ContentPage
         }
         catch (Exception ex)
         {
-            ErrorLabel.Text = "Lỗi kết nối. Vui lòng thử lại.";
+            ErrorLabel.Text = "Loi ket noi. Vui long thu lai sau it phut.";
             ErrorLabel.IsVisible = true;
             System.Diagnostics.Debug.WriteLine($"[Login] {ex.Message}");
         }
         finally
         {
-            LoginBtn.IsEnabled = true;
-            LoadingIndicator.IsRunning = false;
-            LoadingIndicator.IsVisible = false;
+            SetBusyState(false, "Dang nhap");
         }
     }
 
@@ -64,11 +73,46 @@ public partial class LoginPage : ContentPage
     {
         try
         {
-            await _sessionNavigator.OpenRegisterAsync();
+            await _sessionNavigator.GoToRegisterAsync();
         }
         catch (Exception ex)
         {
             System.Diagnostics.Debug.WriteLine($"[Login] Navigate register: {ex.Message}");
         }
+    }
+
+    private async void OnBackClicked(object sender, EventArgs e)
+    {
+        try
+        {
+            await _sessionNavigator.GoToAuthChoiceAsync();
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[Login] Navigate back: {ex.Message}");
+        }
+    }
+
+    private void OnTogglePasswordClicked(object sender, EventArgs e)
+    {
+        _isPasswordVisible = !_isPasswordVisible;
+        PasswordEntry.IsPassword = !_isPasswordVisible;
+        TogglePasswordButton.Text = _isPasswordVisible ? "An" : "Hien";
+    }
+
+    private void ClearValidationMessages()
+    {
+        ErrorLabel.IsVisible = false;
+        EmailValidationLabel.IsVisible = false;
+        PasswordValidationLabel.IsVisible = false;
+    }
+
+    private void SetBusyState(bool isBusy, string buttonText)
+    {
+        _isBusy = isBusy;
+        LoginBtn.IsEnabled = !isBusy;
+        LoginBtn.Text = buttonText;
+        LoadingIndicator.IsVisible = isBusy;
+        LoadingIndicator.IsRunning = isBusy;
     }
 }

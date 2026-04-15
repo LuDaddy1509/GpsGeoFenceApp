@@ -29,12 +29,10 @@
 		<TargetPlatformMinVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows'">10.0.17763.0</TargetPlatformMinVersion>
 	</PropertyGroup>
 
-	<!-- ⬅️ ADD: Cho Windows -->
 	<PropertyGroup Condition="'$(TargetFramework)'=='net10.0-windows10.0.19041.0'">
 		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
 	</PropertyGroup>
 
-	<!-- ⬅️ ADD: Cho Android nếu dùng vector drawable -->
 	<PropertyGroup Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'android'">
 		<AndroidEnableVectorDrawables>true</AndroidEnableVectorDrawables>
 	</PropertyGroup>
@@ -77,6 +75,9 @@
 	</ItemGroup>
 
 	<ItemGroup>
+		<MauiXaml Update="Pages\AuthChoicePage.xaml">
+		  <Generator>MSBuild:Compile</Generator>
+		</MauiXaml>
 		<MauiXaml Update="Pages\LoginPage.xaml">
 		  <Generator>MSBuild:Compile</Generator>
 		</MauiXaml>
@@ -126,14 +127,12 @@
 		</None>
 	</ItemGroup>
 
-	<!-- Exclude Windows platform files -->
 	<ItemGroup>
 		<Compile Remove="Platforms\Windows\**" />
 		<MauiXaml Remove="Platforms\Windows\**" />
 		<None Include="Platforms\Windows\**" />
 	</ItemGroup>
 
-	<!-- Keep legacy work-management sample modules in repo, but out of the travel app build -->
 	<ItemGroup>
 		<Compile Remove="Data\CategoryRepository.cs" />
 		<Compile Remove="Data\JsonContext.cs" />

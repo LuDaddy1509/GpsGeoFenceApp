@@ -88,6 +88,7 @@ public static class MobileServiceCollectionExtensions
 
     public static IServiceCollection AddTravelPages(this IServiceCollection services)
     {
+        services.AddTransient<AuthChoicePage>();
         services.AddTransient<MapPage>();
         services.AddTransient<QrScanPage>();
         services.AddTransient<LoginPage>();
