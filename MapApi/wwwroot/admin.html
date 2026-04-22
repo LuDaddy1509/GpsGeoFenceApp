@@ -6,6 +6,7 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.7/signalr.min.js"></script>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Smart Tourism — Web Admin</title>
@@ -752,6 +753,106 @@
             .section.active {
                 display: block;
             }
+
+        /* Plan badges */
+        .badge-plan-free {
+            background: rgba(100,100,100,0.25);
+            color: #bbb;
+        }
+
+        .badge-plan-pro {
+            background: rgba(255,193,7,0.22);
+            color: #ffd54f;
+            border-color: rgba(255,193,7,0.3);
+        }
+
+        /* Device section */
+        .devices-summary {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .device-online { color: #a5d6a7; }
+        .device-offline { color: #8b93a7; }
+
+        /* QR Hub */
+        .qr-tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+        .qr-tab-btn {
+            padding: 8px 14px;
+            border-radius: 999px;
+            border: 1px solid #2c3648;
+            background: #111722;
+            color: #cfd8e3;
+            cursor: pointer;
+            font-size: 0.84rem;
+        }
+        .qr-tab-btn.active {
+            background: #1976D2;
+            border-color: #1976D2;
+            color: #fff;
+        }
+        .qr-panel { display: none; }
+        .qr-panel.active { display: block; }
+        .qr-preview {
+            margin-top: 14px;
+            padding: 14px;
+            border-radius: 8px;
+            background: #0f1117;
+            border: 1px solid #2b3345;
+            text-align: center;
+        }
+        .qr-preview img {
+            width: 240px;
+            height: 240px;
+            object-fit: contain;
+            background: #fff;
+            border-radius: 6px;
+            padding: 8px;
+        }
+
+        /* Location popup */
+        #locationPopup {
+            position: fixed;
+            inset: 0;
+            background: rgba(6,10,18,0.75);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            z-index: 9997;
+        }
+        #locationPopup.show { display: flex; }
+        #locationPopupCard {
+            width: 100%;
+            max-width: 680px;
+            background: #171b27;
+            border: 1px solid #293043;
+            border-radius: 14px;
+            overflow: hidden;
+        }
+        #locationPopupHeader {
+            padding: 14px 18px;
+            background: #131722;
+            border-bottom: 1px solid #23293a;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        #locationPopupHeader h3 { color: #90caf9; margin: 0; font-size: 0.95rem; }
+        #locationMap { height: 380px; }
+
+        @media (max-width: 900px) {
+            .devices-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        }
+        @media (max-width: 600px) {
+            .devices-summary { grid-template-columns: 1fr; }
+        }
     </style>
 </head>
 <body>
@@ -774,11 +875,10 @@
     <nav>
         <a onclick="showSection('secPois')" id="navPois">📍 Danh sách POI</a>
         <a onclick="showSection('secCreate')" id="navCreate">➕ Thêm POI mới</a>
-        <a onclick="showSection('secTours')" id="navTours">🗺 Quản lý Tour</a>
-        <a onclick="showSection('secTranslate')" id="navTranslate">🌍 Dịch tự động</a>
         <a onclick="showSection('secQrCode')" id="navQrCode">🔲 Tạo mã QR</a>
         <a onclick="showSection('secDashboard')" id="navDashboard">📊 Analytics Dashboard</a>
-        <a onclick="showSection('secUsers')" id="navUsers">👥 Quản lý người dùng</a>
+        <a onclick="showSection('secUsers')" id="navUsers">👥 Người dùng & Doanh thu</a>
+        <a onclick="showSection('secDevices')" id="navDevices">📱 Quản lý thiết bị</a>
     </nav>
     <div class="user-box">
       <div id="userLabel">Đã đăng nhập</div>
@@ -833,85 +933,124 @@
             </div>
         </div>
         <div id="secQrCode" class="section">
-            <div class="card" style="max-width: 500px;">
-                <h3 id="topTitleQr">🔲 Tạo mã QR (Giới hạn 5 lần quét)</h3>
-                <div class="form-row">
-                    <label>Chọn địa điểm (POI)</label>
-                    <select id="qrPoiSelect"></select>
+            <div class="card">
+                <h3>🔲 QR Hub: Tạo mã QR</h3>
+                <div class="qr-tabs">
+                    <button id="tabQrNarration" class="qr-tab-btn active" onclick="showQrHubTab('narration')">QR Thuyết minh</button>
+                    <button id="tabQrDistribution" class="qr-tab-btn" onclick="showQrHubTab('distribution')">QR Tải App</button>
                 </div>
-                <div class="form-row">
-                    <label>Chọn ngôn ngữ thuyết minh</label>
-                    <select id="qrLangSelect">
-                        <option value="vi-VN">Tiếng Việt</option>
-                        <option value="en-US">English</option>
-                        <option value="ja-JP">日本語 (Nhật)</option>
-                        <option value="ko-KR">한국어 (Hàn)</option>
-                        <option value="de-DE">Deutsch (Đức)</option>
-                    </select>
-                </div>
-                <button class="btn btn-primary" onclick="createLimitedQr()">Tạo QR Code</button>
 
-                <div id="qrResult" style="display:none; margin-top: 24px; text-align: center; background: #fff; padding: 20px; border-radius: 8px;">
-                    <canvas id="qrCanvas"></canvas>
-                    <p id="qrTicketInfo" style="font-size: 0.9rem; color: #333; margin: 10px 0; font-weight: bold;"></p>
+                <div id="qrPanelNarration" class="qr-panel active">
+                    <div class="grid2">
+                        <div class="form-row">
+                            <label>Chọn địa điểm (POI)</label>
+                            <select id="qrPoiSelect"></select>
+                        </div>
+                        <div class="form-row">
+                            <label>Ngôn ngữ</label>
+                            <select id="qrLangSelect"></select>
+                        </div>
+                    </div>
+                    <div class="form-row" style="max-width:260px;">
+                        <label>Số lần sử dụng (MaxUses)</label>
+                        <input id="qrMaxUses" type="number" min="1" value="5" />
+                    </div>
+                    <button class="btn btn-primary" onclick="createNarrationQr()">Tạo vé Thuyết minh</button>
                 </div>
-                <button id="btnDownloadQr" class="btn btn-warn" style="display:none; width: 100%; margin-top: 12px;" onclick="downloadQr()">⬇️ Tải ảnh QR về máy</button>
+
+                <div id="qrPanelDistribution" class="qr-panel">
+                    <div class="grid2">
+                        <div class="form-row">
+                            <label>Vị trí đặt mã (LocationName)</label>
+                            <input id="distLocationName" placeholder="Cổng chính Dinh Độc Lập" />
+                        </div>
+                        <div class="form-row">
+                            <label>Mã chiến dịch (CampaignCode)</label>
+                            <input id="distCampaignCode" placeholder="SUMMER_2026 (có thể để trống)" />
+                        </div>
+                    </div>
+                    <button class="btn btn-primary" onclick="createDistributionQr()">Tạo QR Tải App</button>
+                </div>
+
+                <div id="qrPreview" class="qr-preview" style="display:none;">
+                    <img id="qrPreviewImage" alt="QR Preview" />
+                    <p id="qrPreviewInfo" style="margin-top:10px;color:#b7c3d7;"></p>
+                    <button id="qrDownloadBtn" class="btn btn-warn" style="margin-top:10px;" onclick="downloadQrPreview()">⬇️ Tải ảnh PNG</button>
+                </div>
+            </div>
+
+            <div class="card">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+                    <h3 style="margin:0;">🕘 Lịch sử QR đã tạo</h3>
+                    <button class="btn btn-primary btn-sm" onclick="loadQrHistory()">🔄 Làm mới</button>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Loại</th>
+                            <th>Mã</th>
+                            <th>Thông tin</th>
+                            <th>Thời gian tạo</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tblQrHistory"></tbody>
+                </table>
             </div>
         </div>
         <div id="secUsers" class="section">
             <div class="users-hero">
-                <h3>Quản lý người dùng hệ thống</h3>
-                <p>Khu vực này mô phỏng đầy đủ giao diện quản trị tài khoản cho đồ án tốt nghiệp, giúp nhóm dễ demo luồng thêm, chỉnh sửa, tìm kiếm và khóa tài khoản ngay trên frontend mà chưa cần kết nối cơ sở dữ liệu thật.</p>
+                <h3>Người dùng & Doanh thu — All-in-One Dashboard</h3>
+                <p>Giám sát toàn cảnh: lượng thiết bị tải App, thiết bị đang Online, tổng tài khoản đã đăng ký và doanh thu từ gói PRO. Dữ liệu thật từ database, tự làm mới mỗi 30 giây.</p>
                 <div class="users-hero-meta">
-                    <span class="hero-chip">Giao diện sẵn sàng để chụp báo cáo</span>
-                    <span class="hero-chip">Mock data độc lập với SQL Server</span>
-                    <span class="hero-chip">Trải nghiệm phù hợp demo với giảng viên</span>
+                    <span class="hero-chip">Real-time từ SQL Server</span>
+                    <span class="hero-chip">Tự làm mới 30 giây</span>
+                    <span class="hero-chip">Khóa / Mở khóa tức thì</span>
                 </div>
             </div>
+            <!-- 4 Stat tiles -->
             <div class="users-summary">
                 <div class="summary-tile">
-                    <div class="label">Tổng người dùng</div>
-                    <div class="value" id="usersTotalCount">0</div>
-                    <div class="meta">Toàn bộ tài khoản trong dữ liệu mô phỏng</div>
+                    <div class="label">📱 Tổng thiết bị</div>
+                    <div class="value" id="statTotalDevices">—</div>
+                    <div class="meta">Lượt tải App (kể cả không đăng ký)</div>
                 </div>
                 <div class="summary-tile">
-                    <div class="label">Đang hoạt động</div>
-                    <div class="value" id="usersActiveCount">0</div>
-                    <div class="meta">Sẵn sàng đăng nhập và thao tác</div>
+                    <div class="label">🟢 Đang Online</div>
+                    <div class="value" id="statOnlineDevices">—</div>
+                    <div class="meta">Hoạt động trong 5 phút gần nhất</div>
                 </div>
                 <div class="summary-tile">
-                    <div class="label">Đã khóa</div>
-                    <div class="value" id="usersLockedCount">0</div>
-                    <div class="meta">Tạm khóa để kiểm soát quyền truy cập</div>
+                    <div class="label">👤 Tổng người dùng</div>
+                    <div class="value" id="statTotalUsers">—</div>
+                    <div class="meta">Tài khoản đã đăng ký chính thức</div>
                 </div>
-                <div class="summary-tile">
-                    <div class="label">Quản trị viên</div>
-                    <div class="value" id="usersAdminCount">0</div>
-                    <div class="meta">Nhóm có quyền quản lý toàn hệ thống</div>
+                <div class="summary-tile" style="--tile-accent: #ffd54f;">
+                    <div class="label">💰 Doanh thu gói PRO</div>
+                    <div class="value" id="statProRevenue" style="color:#ffd54f;">—</div>
+                    <div class="meta">Ước tính (50.000 VNĐ / tài khoản)</div>
                 </div>
             </div>
+            <!-- User table -->
             <div class="card users-panel">
                 <div class="toolbar">
                     <div>
-                        <h3 style="margin-bottom:6px;">Danh sách tài khoản quản trị</h3>
-                        <p class="subtle-text">Có thể tra cứu nhanh theo họ tên, email, vai trò hoặc trạng thái. Toàn bộ dữ liệu hiện tại đều chạy phía frontend để phục vụ demo.</p>
+                        <h3 style="margin-bottom:4px;">Danh sách tài khoản người dùng</h3>
+                        <p class="subtle-text">Tra cứu theo tên, email hoặc số điện thoại.</p>
                     </div>
                     <div class="toolbar-actions">
-                        <input id="userSearchInput" class="search-input" type="text" placeholder="Tìm theo tên, email, vai trò..." oninput="filterUsers()" />
-                        <button class="btn btn-primary" onclick="openUserModal()">+ Thêm người dùng</button>
+                        <input id="userSearchInput" class="search-input" type="text" placeholder="Tìm theo tên, email, SĐT..." oninput="onUserSearch()" />
                     </div>
                 </div>
                 <div class="table-wrap">
                     <table class="users-table">
                         <thead>
                             <tr>
-                                <th>Ho ten</th>
-                                <th>Ten dang nhap</th>
-                                <th>Vai tro</th>
-                                <th>Trang thai</th>
-                                <th>Lien he</th>
-                                <th>Cap nhat</th>
-                                <th>Hanh dong</th>
+                                <th>Tài khoản</th>
+                                <th>Email / SĐT</th>
+                                <th>Gói</th>
+                                <th>Trạng thái</th>
+                                <th>Ngày tham gia</th>
+                                <th>Hành động</th>
                             </tr>
                         </thead>
                         <tbody id="tblUsers"></tbody>
@@ -919,7 +1058,105 @@
                 </div>
                 <div id="usersEmptyState" class="empty-state" style="display:none;margin-top:14px;">
                     <strong>Không tìm thấy người dùng phù hợp</strong>
-                    <p>Hãy thử đổi từ khóa tìm kiếm hoặc xóa bộ lọc hiện tại để xem lại toàn bộ danh sách.</p>
+                    <p>Thử đổi từ khóa hoặc xóa bộ lọc để xem toàn bộ danh sách.</p>
+                </div>
+                <div id="usersPagination" style="margin-top:14px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;"></div>
+            </div>
+        </div>
+
+        <!-- DEVICES -->
+        <div id="secDevices" class="section">
+            <div class="users-hero">
+                <h3>Quản lý &amp; Giám sát Thiết bị</h3>
+                <p>Thống kê tổng số thiết bị tải App, theo dõi trạng thái Online/Offline theo cơ chế Timeout 5 phút và xem vị trí cuối cùng trên bản đồ.</p>
+                <div class="users-hero-meta">
+                    <span class="hero-chip">Timeout 5 phút</span>
+                    <span class="hero-chip">Ping mỗi 3 phút</span>
+                    <span class="hero-chip">Tự làm mới 30 giây</span>
+                </div>
+            </div>
+            <div class="devices-summary">
+                <div class="summary-tile">
+                    <div class="label">📲 Tổng thiết bị đã tải App</div>
+                    <div class="value" id="devStatTotal">—</div>
+                    <div class="meta">Từng mở ứng dụng ít nhất 1 lần</div>
+                </div>
+                <div class="summary-tile">
+                    <div class="label">🟢 Đang trực tuyến</div>
+                    <div class="value" id="devStatOnline" style="color:#a5d6a7;">—</div>
+                    <div class="meta">Hoạt động trong 5 phút gần nhất</div>
+                </div>
+                <div class="summary-tile">
+                    <div class="label">⚪ Ngoại tuyến</div>
+                    <div class="value" id="devStatOffline" style="color:#8b93a7;">—</div>
+                    <div class="meta">Không có tín hiệu &gt; 5 phút</div>
+                </div>
+            </div>
+            <div class="card users-panel">
+                <div class="toolbar">
+                    <h3>Danh sách thiết bị</h3>
+                    <button class="btn btn-primary btn-sm" onclick="loadDevices(); loadVisitorPoiRegions(); loadAudioQueues();">🔄 Làm mới</button>
+                </div>
+                <div class="table-wrap">
+                    <table class="users-table">
+                        <thead>
+                            <tr>
+                                <th>Mã thiết bị</th>
+                                <th>Nền tảng</th>
+                                <th>Phiên bản App</th>
+                                <th>Hoạt động cuối</th>
+                                <th>Trạng thái</th>
+                                <th>Vị trí</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tblDevices"></tbody>
+                    </table>
+                </div>
+                <div id="devicesEmptyState" class="empty-state" style="display:none;margin-top:14px;">
+                    <strong>Chưa có thiết bị nào</strong>
+                    <p>Dữ liệu sẽ xuất hiện khi có thiết bị kết nối và gửi heartbeat.</p>
+                </div>
+            </div>
+            <div class="card users-panel" style="margin-top:16px;">
+                <div class="toolbar">
+                    <div>
+                        <h3>POI theo visitor</h3>
+                        <p class="subtle-text">Xác định visitor đang gần POI nào hoặc đang nằm giữa 2 POI theo GPS mới nhất.</p>
+                    </div>
+                    <button class="btn btn-primary btn-sm" onclick="loadVisitorPoiRegions()">🔄 Cập nhật</button>
+                </div>
+                <div class="table-wrap">
+                    <table class="users-table">
+                        <thead>
+                            <tr>
+                                <th>Visitor</th>
+                                <th>Vị trí</th>
+                                <th>POI gần nhất</th>
+                                <th>POI thứ 2</th>
+                                <th>Khoảng cách</th>
+                                <th>Kết luận</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tblVisitorPoiRegions"></tbody>
+                    </table>
+                </div>
+                <div id="visitorPoiEmptyState" class="empty-state" style="display:none;margin-top:14px;">
+                    <strong>Chưa có visitor online có tọa độ GPS</strong>
+                    <p>Mở app trên thiết bị/emulator và chờ app gửi vị trí lên server.</p>
+                </div>
+            </div>
+            <div class="card users-panel" style="margin-top:16px;">
+                <div class="toolbar">
+                    <div>
+                        <h3>Audio queue theo POI</h3>
+                        <p class="subtle-text">Danh sách visitor đang nghe audio/TTS, nhóm theo từng POI và sắp xếp theo thời điểm bắt đầu.</p>
+                    </div>
+                    <button class="btn btn-primary btn-sm" onclick="loadAudioQueues()">🔄 Cập nhật</button>
+                </div>
+                <div id="audioQueueGroups"></div>
+                <div id="audioQueueEmptyState" class="empty-state" style="display:none;margin-top:14px;">
+                    <strong>Chưa có visitor nào đang nghe audio</strong>
+                    <p>Mở audio/thuyết minh POI trên app để session xuất hiện trong queue.</p>
                 </div>
             </div>
         </div>
@@ -933,14 +1170,45 @@
                     <div class="form-row"><label>Tên địa điểm *</label><input id="fName" placeholder="Nhà thờ Đức Bà" /></div>
                     <div class="form-row"><label>Bán kính (m)</label><input id="fRadius" type="number" value="120" /></div>
                 </div>
-                <div class="form-row"><label>Mô tả</label><textarea id="fDesc" placeholder="Mô tả ngắn bằng tiếng Việt..."></textarea></div>
-                <div class="form-row"><label>Thuyết minh (TTS)</label><textarea id="fNarr" placeholder="Nội dung thuyết minh âm thanh..."></textarea></div>
                 <div class="grid2">
                     <div class="form-row"><label>Vĩ độ (Lat)</label><input id="fLat" type="number" step="0.000001" placeholder="10.779811" /></div>
                     <div class="form-row"><label>Kinh độ (Lng)</label><input id="fLng" type="number" step="0.000001" placeholder="106.699099" /></div>
                 </div>
                 <div class="form-row"><label>Google Maps Link</label><input id="fMapLink" placeholder="https://maps.app.goo.gl/..." /></div>
                 <div class="form-row"><label>Audio URL</label><input id="fAudio" placeholder="https://... hoặc đường dẫn file" /></div>
+
+                <!-- Language Tabs for Content -->
+                <div style="margin-top:16px;margin-bottom:8px;">
+                    <label style="color:#90caf9;font-size:0.85rem;display:block;margin-bottom:8px;">🌍 Nội dung theo ngôn ngữ</label>
+                    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;">
+                        <button type="button" class="btn btn-sm" id="tabVi" onclick="switchLangTab('vi-VN')" style="background:#1976D2;color:#fff;">🇻🇳 vi-VN</button>
+                        <button type="button" class="btn btn-sm" id="tabEn" onclick="switchLangTab('en-US')" style="background:#333;color:#ccc;">🇺🇸 en-US</button>
+                        <button type="button" class="btn btn-sm" id="tabJa" onclick="switchLangTab('ja-JP')" style="background:#333;color:#ccc;">🇯🇵 ja-JP</button>
+                        <button type="button" class="btn btn-sm" id="tabKo" onclick="switchLangTab('ko-KR')" style="background:#333;color:#ccc;">🇰🇷 ko-KR</button>
+                        <button type="button" class="btn btn-sm" id="tabDe" onclick="switchLangTab('de-DE')" style="background:#333;color:#ccc;">🇩🇪 de-DE</button>
+                    </div>
+                    <div id="langTabContent">
+                        <div class="form-row"><label id="descLabel">Mô tả (vi-VN)</label><textarea id="fDesc" placeholder="Mô tả ngắn bằng tiếng Việt..."></textarea></div>
+                        <div class="form-row"><label id="narrLabel">Thuyết minh TTS (vi-VN)</label><textarea id="fNarr" placeholder="Nội dung thuyết minh âm thanh..."></textarea></div>
+                    </div>
+                </div>
+
+                <!-- Multi-image Upload -->
+                <div style="margin-top:8px;margin-bottom:16px;">
+                    <label style="color:#90caf9;font-size:0.85rem;display:block;margin-bottom:6px;">🖼️ Ảnh địa điểm</label>
+                    <div id="imageDropZone"
+                         style="border:2px dashed #333;border-radius:8px;padding:20px;text-align:center;color:#777;font-size:0.875rem;cursor:pointer;transition:border-color .2s;"
+                         ondragover="event.preventDefault();this.style.borderColor='#1976D2';"
+                         ondragleave="this.style.borderColor='#333';"
+                         ondrop="handleImageDrop(event);"
+                         onclick="document.getElementById('fImages').click()">
+                        📂 Kéo thả ảnh vào đây hoặc <span style="color:#90caf9;text-decoration:underline;">chọn tệp</span><br/>
+                        <span style="font-size:0.8rem;color:#555;">Hỗ trợ: JPG, PNG — tối đa 5 ảnh</span>
+                    </div>
+                    <input type="file" id="fImages" multiple accept="image/jpeg,image/png" style="display:none;" onchange="previewImages(this.files)" />
+                    <div id="imagePreviewRow" style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;"></div>
+                </div>
+
                 <div style="display:flex;gap:10px;margin-top:6px;">
                     <button class="btn btn-primary" onclick="submitPoi()">💾 Lưu</button>
                     <button class="btn" style="background:#333;" onclick="clearForm()">✕ Huỷ</button>
@@ -1002,8 +1270,8 @@
     <div class="modal-card" onclick="event.stopPropagation()">
         <div class="modal-header" style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;">
             <div>
-                <h3 id="userModalTitle">Thêm người dùng</h3>
-                <div class="modal-subtitle">Điền thông tin cơ bản để mô phỏng tài khoản quản trị trong giao diện web admin.</div>
+                <h3 id="userModalTitle">Sửa thông tin người dùng</h3>
+                <div class="modal-subtitle">Cập nhật số điện thoại và gói cước. Username và Email không thể thay đổi tại đây.</div>
             </div>
             <button class="modal-close" type="button" onclick="closeUserModal()">Đóng</button>
         </div>
@@ -1013,58 +1281,49 @@
                 <h4>Thông tin tài khoản</h4>
                 <div class="grid2">
                     <div class="form-row">
-                        <label>Họ tên *</label>
-                        <input id="userFullName" type="text" placeholder="Nguyen Van A" />
-                        <div id="userFullNameError" class="field-error"></div>
+                        <label>Tên đăng nhập</label>
+                        <input id="userUsername" type="text" readonly style="opacity:.6;cursor:not-allowed;" />
                     </div>
                     <div class="form-row">
-                        <label>Tên đăng nhập *</label>
-                        <input id="userUsername" type="text" placeholder="nguyenvana" />
-                    </div>
-                </div>
-                <div class="grid2">
-                    <div class="form-row">
-                        <label>Email *</label>
-                        <input id="userEmail" type="email" placeholder="admin@smarttourism.local" />
-                        <div id="userEmailError" class="field-error"></div>
-                    </div>
-                    <div class="form-row">
-                        <label>Số điện thoại</label>
-                        <input id="userPhone" type="text" placeholder="0901234567" />
-                    </div>
-                </div>
-            </div>
-            <div class="user-form-section">
-                <h4>Phân quyền và trạng thái</h4>
-                <div class="grid2">
-                    <div class="form-row">
-                        <label>Vai trò</label>
-                        <select id="userRole">
-                            <option value="Admin">Admin</option>
-                            <option value="Editor">Editor</option>
-                            <option value="Viewer">Viewer</option>
-                        </select>
-                    </div>
-                    <div class="form-row">
-                        <label>Trạng thái tài khoản</label>
-                        <label class="status-toggle">
-                            <input id="userStatusToggle" type="checkbox" checked onchange="syncUserStatusLabel()" />
-                            <span id="userStatusLabel">Đang hoạt động</span>
-                        </label>
-                        <input id="userStatus" type="hidden" value="active" />
+                        <label>Email</label>
+                        <input id="userEmail" type="email" readonly style="opacity:.6;cursor:not-allowed;" />
                     </div>
                 </div>
                 <div class="form-row">
-                    <label>Ghi chú</label>
-                    <textarea id="userNote" placeholder="Ghi chú nội bộ về tài khoản này..."></textarea>
-                    <div class="field-hint">Trường này chỉ dùng để demo giao diện, chưa lưu xuống backend.</div>
+                    <label>Số điện thoại</label>
+                    <input id="userPhone" type="text" placeholder="0901234567" />
+                </div>
+            </div>
+            <div class="user-form-section">
+                <h4>Gói cước</h4>
+                <div class="form-row">
+                    <label>Loại gói</label>
+                    <select id="userPlanType" onchange="toggleProExpiryField()">
+                        <option value="FREE">FREE</option>
+                        <option value="PRO">PRO</option>
+                    </select>
+                </div>
+                <div class="form-row" id="proExpiryRow" style="display:none;">
+                    <label>Ngày hết hạn PRO</label>
+                    <input id="userProExpiry" type="date" />
                 </div>
             </div>
         </div>
         <div class="modal-footer">
             <button class="btn" type="button" style="background:#333;color:#fff;" onclick="closeUserModal()">Hủy</button>
-            <button class="btn btn-primary" type="button" onclick="saveUser()">Lưu người dùng</button>
+            <button class="btn btn-primary" type="button" onclick="saveUser()">Lưu thay đổi</button>
         </div>
+    </div>
+</div>
+
+<!-- LOCATION POPUP -->
+<div id="locationPopup" onclick="if(event.target.id==='locationPopup')closeLocationPopup()">
+    <div id="locationPopupCard">
+        <div id="locationPopupHeader">
+            <h3 id="locationPopupTitle">Vị trí thiết bị</h3>
+            <button class="modal-close" onclick="closeLocationPopup()">Đóng</button>
+        </div>
+        <div id="locationMap"></div>
     </div>
 </div>
 
@@ -1073,16 +1332,18 @@ const API = '';
 let token = localStorage.getItem('admin_token') || '';
 let currentUser = localStorage.getItem('admin_user') || '';
 let currentSection = 'secPois';
-const usersStorageKey = 'admin_mock_users';
-const defaultMockUsers = [
-  { id: 1, fullName: 'Tran Minh Quan', username: 'tmquan', email: 'tmquan@smarttourism.local', phone: '0903123456', role: 'Admin', status: 'active', note: 'Quan tri tong the he thong.', updatedAt: '2026-04-17T08:30:00', createdAt: '2026-03-22T08:30:00' },
-  { id: 2, fullName: 'Le Thu Ha', username: 'ltha', email: 'ha.le@smarttourism.local', phone: '0911456789', role: 'Editor', status: 'active', note: 'Phu trach noi dung POI va tour.', updatedAt: '2026-04-18T15:10:00', createdAt: '2026-03-28T10:00:00' },
-  { id: 3, fullName: 'Pham Gia Bao', username: 'pgbao', email: 'bao.pham@smarttourism.local', phone: '0988222444', role: 'Viewer', status: 'locked', note: 'Tai khoan xem bao cao, dang tam khoa de doi reset.', updatedAt: '2026-04-16T11:20:00', createdAt: '2026-04-01T09:15:00' },
-  { id: 4, fullName: 'Nguyen Khanh Linh', username: 'nklinh', email: 'linh.nguyen@smarttourism.local', phone: '0939777111', role: 'Editor', status: 'active', note: 'Chuyen phu trach da ngon ngu.', updatedAt: '2026-04-19T07:45:00', createdAt: '2026-04-03T13:25:00' },
-  { id: 5, fullName: 'Vo Anh Tuan', username: 'vatuan', email: 'tuan.vo@smarttourism.local', phone: '0977333666', role: 'Viewer', status: 'active', note: 'Theo doi dashboard va kiem thu nghiep vu.', updatedAt: '2026-04-15T16:05:00', createdAt: '2026-04-05T16:05:00' }
-];
-let users = loadUsersState();
-let filteredUsers = [...users];
+// state cho user management
+let _usersCurrentPage = 1;
+let _usersSearchTimer = null;
+let _statsRefreshTimer = null;
+let _devicesRefreshTimer = null;
+let _audioQueueRefreshTimer = null;
+let _deviceHubConn = null;
+let _deviceMap = new Map();
+let _devicePresenceSummary = { onlineDevices: null, displayOnlineVisitors: null };
+let _visitorPoiRegions = [];
+let _audioQueues = [];
+const DEVICE_EVENT_V1 = 'admin.devices.presence.changed.v1';
 
 // ── Auth ──────────────────────────────────────────────────────────
 async function doLogin() {
@@ -1093,8 +1354,7 @@ async function doLogin() {
   const res = await fetch(`${API}/api/v1/auth/login`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ username: u, password: p })
-  });
+    body: JSON.stringify({ identifier: u, password: p })  });
   if (!res.ok) { document.getElementById('lErr').textContent = 'Sai tên đăng nhập hoặc mật khẩu.'; return; }
 
   const data = await res.json();
@@ -1107,6 +1367,14 @@ async function doLogin() {
 
 function doLogout() {
   token = ''; currentUser = '';
+  clearTimeout(_statsRefreshTimer);
+  clearTimeout(_devicesRefreshTimer);
+  clearTimeout(_audioQueueRefreshTimer);
+  if (_deviceHubConn) {
+    _deviceHubConn.stop().catch(() => {});
+    _deviceHubConn = null;
+  }
+  _deviceMap = new Map();
   localStorage.removeItem('admin_token');
   localStorage.removeItem('admin_user');
   document.getElementById('appShell').style.display = 'none';
@@ -1117,6 +1385,7 @@ function startApp() {
   document.getElementById('loginScreen').style.display = 'none';
   document.getElementById('appShell').style.display = 'flex';
   document.getElementById('userLabel').textContent = `👤 ${currentUser}`;
+  initDevicesRealtime();
   showSection('secPois');
 }
 
@@ -1126,11 +1395,11 @@ function startApp() {
         document.querySelectorAll('#sidebar nav a').forEach(a => a.classList.remove('active'));
         document.getElementById(id).classList.add('active');
         // THÊM TIÊU ĐỀ CHO DASHBOARD
-        const titles = { secPois: 'Danh sách POI', secCreate: 'Thêm POI mới', secTours: 'Quản lý Tour', secTranslate: 'Dịch tự động', secQrCode: 'QR Code', secDashboard: 'Analytics Dashboard', secUsers: 'Quản lý người dùng' };
+        const titles = { secPois: 'Danh sách POI', secCreate: 'Thêm POI mới', secQrCode: 'QR Code', secDashboard: 'Analytics Dashboard', secUsers: 'Người dùng & Doanh thu', secDevices: 'Quản lý thiết bị' };
         document.getElementById('topTitle').textContent = titles[id] || '';
         currentSection = id;
-        // THÊM ID NÚT DASHBOARD
-        const navMap = { secPois: 'navPois', secCreate: 'navCreate', secTours: 'navTours', secTranslate: 'navTranslate', secQrCode: 'navQrCode', secDashboard: 'navDashboard', secUsers: 'navUsers' };
+        if (id !== 'secDevices') clearTimeout(_audioQueueRefreshTimer);
+        const navMap = { secPois: 'navPois', secCreate: 'navCreate', secQrCode: 'navQrCode', secDashboard: 'navDashboard', secUsers: 'navUsers', secDevices: 'navDevices' };
         if (navMap[id]) document.getElementById(navMap[id]).classList.add('active');
         loadSection(id);
     }
@@ -1139,11 +1408,68 @@ function refreshCurrent() { loadSection(currentSection); }
 function loadSection(id) {
         if (id === 'secPois') loadPois();
         if (id === 'secTours') loadTours();
-    if (id === 'secTranslate') loadTranslateStatus();
-    if (id === 'secQrCode') loadPoiForQr();
+        if (id === 'secTranslate') loadTranslateStatus();
+        if (id === 'secQrCode') loadPoiForQr();
         if (id === 'secDashboard') { loadDashboard(); loadHeatmap(); }
-        if (id === 'secUsers') renderUsers();
+        if (id === 'secUsers') { loadAdminStats(); loadUsers(1); }
+        if (id === 'secDevices') { loadDevices(); loadVisitorPoiRegions(); loadAudioQueues(); }
     }
+
+// ── POI Form: Language Tab Switcher ──────────────────────────────
+let _currentLangTab = 'vi-VN';
+const _langTabData = { 'vi-VN': { desc: '', narr: '' }, 'en-US': { desc: '', narr: '' }, 'ja-JP': { desc: '', narr: '' }, 'ko-KR': { desc: '', narr: '' }, 'de-DE': { desc: '', narr: '' } };
+
+function switchLangTab(lang) {
+    // Save current tab data
+    _langTabData[_currentLangTab].desc = document.getElementById('fDesc').value;
+    _langTabData[_currentLangTab].narr = document.getElementById('fNarr').value;
+    _currentLangTab = lang;
+    // Restore target tab data
+    document.getElementById('fDesc').value = _langTabData[lang].desc;
+    document.getElementById('fNarr').value = _langTabData[lang].narr;
+    document.getElementById('descLabel').textContent = `Mô tả (${lang})`;
+    document.getElementById('narrLabel').textContent = `Thuyết minh TTS (${lang})`;
+    // Update button highlights
+    ['vi-VN','en-US','ja-JP','ko-KR','de-DE'].forEach(l => {
+        const btn = document.getElementById('tab' + l.replace('-','').replace(/[A-Z]/g, c => c));
+        if (btn) btn.style.background = l === lang ? '#1976D2' : '#333';
+    });
+}
+
+// ── POI Form: Image Preview & Drop ───────────────────────────────
+let _pendingImages = [];
+
+function handleImageDrop(event) {
+    event.preventDefault();
+    document.getElementById('imageDropZone').style.borderColor = '#333';
+    const files = Array.from(event.dataTransfer.files).filter(f => f.type.startsWith('image/'));
+    previewImages(files);
+}
+
+function previewImages(filesOrList) {
+    const files = Array.from(filesOrList);
+    _pendingImages = files.slice(0, 5);
+    const row = document.getElementById('imagePreviewRow');
+    row.innerHTML = '';
+    _pendingImages.forEach((f, i) => {
+        const reader = new FileReader();
+        reader.onload = e => {
+            const img = document.createElement('img');
+            img.src = e.target.result;
+            img.style.cssText = 'width:70px;height:70px;object-fit:cover;border-radius:6px;border:2px solid #333;';
+            const wrap = document.createElement('div');
+            wrap.style.cssText = 'position:relative;display:inline-block;';
+            const del = document.createElement('button');
+            del.textContent = '✕';
+            del.style.cssText = 'position:absolute;top:-4px;right:-4px;background:#c62828;color:#fff;border:none;border-radius:50%;width:18px;height:18px;font-size:10px;cursor:pointer;';
+            del.onclick = () => { _pendingImages.splice(i, 1); previewImages(_pendingImages); };
+            wrap.appendChild(img);
+            wrap.appendChild(del);
+            row.appendChild(wrap);
+        };
+        reader.readAsDataURL(f);
+    });
+}
 
 // ── POI List ──────────────────────────────────────────────────────
 async function loadPois() {
@@ -1293,96 +1619,93 @@ async function runTranslate() {
   loadTranslateStatus();
 }
 
-// User management mock frontend
-function loadUsersState() {
-  try {
-    const saved = localStorage.getItem(usersStorageKey);
-    if (!saved) return defaultMockUsers.map(cloneUser);
-    const parsed = JSON.parse(saved);
-    return Array.isArray(parsed) && parsed.length ? parsed.map(cloneUser) : defaultMockUsers.map(cloneUser);
-  } catch (e) {
-    return defaultMockUsers.map(cloneUser);
-  }
+// ── User Management (Real API) ────────────────────────────────────
+
+async function loadAdminStats() {
+  const res = await authFetch('/api/v1/admin/stats');
+  if (!res) return;
+  const d = await res.json();
+  document.getElementById('statTotalDevices').textContent = d.totalDevices ?? '—';
+  document.getElementById('statOnlineDevices').textContent = d.displayOnlineVisitors ?? d.onlineDevices ?? '—';
+  document.getElementById('statTotalUsers').textContent = d.totalRegisteredUsers ?? '—';
+  document.getElementById('statProRevenue').textContent =
+    d.totalProRevenue != null ? d.totalProRevenue.toLocaleString('vi-VN') + ' ₫' : '—';
+  clearTimeout(_statsRefreshTimer);
+  _statsRefreshTimer = setTimeout(loadAdminStats, 30000);
 }
 
-function cloneUser(user) {
-  return { ...user };
+async function loadUsers(page = 1) {
+  _usersCurrentPage = page;
+  const search = document.getElementById('userSearchInput')?.value?.trim() || '';
+  const qs = new URLSearchParams({ page, pageSize: 20 });
+  if (search) qs.set('search', search);
+  const res = await authFetch(`/api/v1/admin/users?${qs}`);
+  if (!res) return;
+  const data = await res.json();
+  renderUsersTable(data.items || []);
+  renderUsersPagination(data.total, data.page, data.pageSize);
 }
 
-function persistUsers() {
-  localStorage.setItem(usersStorageKey, JSON.stringify(users));
-}
-
-function renderUsers() {
-  filteredUsers = getFilteredUsers();
+function renderUsersTable(items) {
   const tbody = document.getElementById('tblUsers');
-  const emptyState = document.getElementById('usersEmptyState');
-
-  updateUserSummary();
-
-  if (!filteredUsers.length) {
-    tbody.innerHTML = '';
-    emptyState.style.display = 'block';
-    return;
-  }
-
-  emptyState.style.display = 'none';
-  tbody.innerHTML = filteredUsers.map(user => `
+  const empty = document.getElementById('usersEmptyState');
+  if (!items.length) { tbody.innerHTML = ''; empty.style.display = 'block'; return; }
+  empty.style.display = 'none';
+  tbody.innerHTML = items.map(u => `
     <tr>
       <td>
-        <div class="user-name">
-          <strong>${escapeHtml(user.fullName)}</strong>
-          <span class="subtle-text">#${user.id} • Tạo ${formatUserDate(user.createdAt)}</span>
+        <div class="user-cell">
+          <div class="user-avatar">${getUserInitials(u.username)}</div>
+          <div class="user-name">
+            <strong>${escapeHtml(u.username)}</strong>
+            <span class="subtle-text">${escapeHtml(u.userId.slice(0,8))}…</span>
+          </div>
         </div>
       </td>
       <td>
         <div class="user-name">
-          <strong>${escapeHtml(user.username)}</strong>
-          <span class="subtle-text">${escapeHtml(user.note || 'Không có ghi chú')}</span>
+          <strong>${escapeHtml(u.mail)}</strong>
+          <span class="subtle-text">${escapeHtml(u.phoneNumber || 'Chưa cập nhật')}</span>
         </div>
       </td>
-      <td>${buildRoleBadge(user.role)}</td>
-      <td>${buildStatusBadge(user.status)}</td>
-      <td>
-        <div class="user-name">
-          <strong>${escapeHtml(user.email)}</strong>
-          <span class="subtle-text">${escapeHtml(user.phone || 'Chưa cập nhật số điện thoại')}</span>
-        </div>
-      </td>
-      <td><span class="subtle-text">${formatUserDate(user.updatedAt, true)}</span></td>
+      <td>${buildPlanBadge(u.planType, u.proExpiryDate)}</td>
+      <td>${buildStatusBadge(u.isActive)}</td>
+      <td><span class="subtle-text">${formatDate(u.createdAt)}</span></td>
       <td>
         <div class="table-actions">
-          <button class="btn btn-primary btn-sm" onclick="openUserModal(${user.id})">Sửa</button>
-          <button class="btn ${user.status === 'active' ? 'btn-warn' : 'btn-primary'} btn-sm" onclick="toggleUserStatus(${user.id})">${user.status === 'active' ? 'Khóa' : 'Mở khóa'}</button>
+          <button class="btn btn-primary btn-sm table-action-btn" onclick="openUserModal('${u.userId}','${escapeHtml(u.username)}','${escapeHtml(u.mail)}','${escapeHtml(u.phoneNumber||'')}','${u.planType}','${u.proExpiryDate||''}')">Sửa</button>
+          <button class="btn ${u.isActive ? 'btn-warn' : 'btn-primary'} btn-sm table-action-btn" onclick="toggleUserLock('${u.userId}',${u.isActive})">${u.isActive ? 'Khóa' : 'Mở khóa'}</button>
         </div>
       </td>
-    </tr>
-  `).join('');
+    </tr>`).join('');
 }
 
-function updateUserSummary() {
-  const activeCount = users.filter(user => user.status === 'active').length;
-  const lockedCount = users.length - activeCount;
-  document.getElementById('usersTotalCount').textContent = String(users.length);
-  document.getElementById('usersActiveCount').textContent = String(activeCount);
-  document.getElementById('usersLockedCount').textContent = String(lockedCount);
+function renderUsersPagination(total, page, pageSize) {
+  const pages = Math.ceil(total / pageSize);
+  const el = document.getElementById('usersPagination');
+  if (pages <= 1) { el.innerHTML = `<span class="subtle-text">Tổng: ${total} người dùng</span>`; return; }
+  let html = `<span class="subtle-text">Tổng: ${total} |</span>`;
+  for (let i = 1; i <= pages; i++) {
+    html += `<button class="btn btn-sm${i === page ? ' btn-primary' : ''}" style="${i !== page ? 'background:#222;color:#ccc;' : ''}" onclick="loadUsers(${i})">${i}</button>`;
+  }
+  el.innerHTML = html;
 }
 
-function openUserModal(id = null) {
-  const modal = document.getElementById('userModal');
-  const title = document.getElementById('userModalTitle');
-  const user = id ? users.find(item => item.id === id) : null;
+function onUserSearch() {
+  clearTimeout(_usersSearchTimer);
+  _usersSearchTimer = setTimeout(() => loadUsers(1), 400);
+}
 
-  document.getElementById('userId').value = user?.id || '';
-  document.getElementById('userFullName').value = user?.fullName || '';
-  document.getElementById('userUsername').value = user?.username || '';
-  document.getElementById('userEmail').value = user?.email || '';
-  document.getElementById('userPhone').value = user?.phone || '';
-  document.getElementById('userRole').value = user?.role || 'Viewer';
-  document.getElementById('userStatus').value = user?.status || 'active';
-  document.getElementById('userNote').value = user?.note || '';
-  title.textContent = user ? `Chỉnh sửa người dùng #${user.id}` : 'Thêm người dùng';
-  modal.classList.add('show');
+function openUserModal(userId, username, mail, phone, planType, proExpiry) {
+  document.getElementById('userId').value = userId;
+  document.getElementById('userUsername').value = username;
+  document.getElementById('userEmail').value = mail;
+  document.getElementById('userPhone').value = phone;
+  document.getElementById('userPlanType').value = planType || 'FREE';
+  document.getElementById('userProExpiry').value = proExpiry ? proExpiry.slice(0,10) : '';
+  document.getElementById('userModalTitle').textContent = `Sửa thông tin: ${username}`;
+  toggleProExpiryField();
+  document.getElementById('userModal').classList.add('show');
 }
 
 function closeUserModal() {
@@ -1393,122 +1716,69 @@ function handleUserModalBackdrop(event) {
   if (event.target.id === 'userModal') closeUserModal();
 }
 
-function saveUser() {
-  const id = parseInt(document.getElementById('userId').value, 10);
-  const fullName = document.getElementById('userFullName').value.trim();
-  const username = document.getElementById('userUsername').value.trim();
-  const email = document.getElementById('userEmail').value.trim();
+function toggleProExpiryField() {
+  const plan = document.getElementById('userPlanType').value;
+  const row = document.getElementById('proExpiryRow');
+  if (row) row.style.display = plan === 'PRO' ? '' : 'none';
+}
+
+async function saveUser() {
+  const userId = document.getElementById('userId').value;
   const phone = document.getElementById('userPhone').value.trim();
-  const role = document.getElementById('userRole').value;
-  const status = document.getElementById('userStatus').value;
-  const note = document.getElementById('userNote').value.trim();
+  const planType = document.getElementById('userPlanType').value;
+  const proExpiry = document.getElementById('userProExpiry').value;
 
-  if (!fullName || !username || !email) {
-    toast('Họ tên, tên đăng nhập và email là bắt buộc', true);
-    return;
-  }
+  const body = { phoneNumber: phone || null, planType };
+  if (planType === 'PRO' && proExpiry) body.proExpiryDate = new Date(proExpiry).toISOString();
+  else body.proExpiryDate = null;
 
-  const duplicateUser = users.find(user =>
-    user.id !== id &&
-    (user.username.toLowerCase() === username.toLowerCase() || user.email.toLowerCase() === email.toLowerCase())
-  );
-  if (duplicateUser) {
-    toast('Tên đăng nhập hoặc email đã tồn tại trong mock data', true);
-    return;
-  }
-
-  const now = new Date().toISOString();
-  if (id) {
-    users = users.map(user => user.id === id ? {
-      ...user,
-      fullName,
-      username,
-      email,
-      phone,
-      role,
-      status,
-      note,
-      updatedAt: now
-    } : user);
-    toast(`Đã cập nhật người dùng #${id}`);
-  } else {
-    const nextId = users.length ? Math.max(...users.map(user => user.id)) + 1 : 1;
-    users.unshift({
-      id: nextId,
-      fullName,
-      username,
-      email,
-      phone,
-      role,
-      status,
-      note,
-      createdAt: now,
-      updatedAt: now
-    });
-    toast('Đã thêm người dùng mới');
-  }
-
-  persistUsers();
+  const res = await authFetch(`/api/v1/admin/users/${userId}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+  });
+  if (!res || !res.ok) { toast('Cập nhật thất bại', true); return; }
+  toast('Đã cập nhật người dùng');
   closeUserModal();
-  filterUsers();
+  loadUsers(_usersCurrentPage);
+  loadAdminStats();
 }
 
-function toggleUserStatus(id) {
-  const target = users.find(user => user.id === id);
-  if (!target) return;
-
-  const nextStatus = target.status === 'active' ? 'locked' : 'active';
-  target.status = nextStatus;
-  target.updatedAt = new Date().toISOString();
-  persistUsers();
-  renderUsers();
-  toast(nextStatus === 'active' ? `Đã mở khóa user #${id}` : `Đã khóa user #${id}`);
+async function toggleUserLock(userId, isCurrentlyActive) {
+  const action = isCurrentlyActive ? 'khóa' : 'mở khóa';
+  if (!confirm(`Xác nhận ${action} tài khoản này?`)) return;
+  const res = await authFetch(`/api/v1/admin/users/${userId}/lock`, { method: 'PUT' });
+  if (!res || !res.ok) { toast('Thao tác thất bại', true); return; }
+  toast(`Đã ${action} tài khoản`);
+  loadUsers(_usersCurrentPage);
 }
 
-function filterUsers() {
-  renderUsers();
+function buildPlanBadge(planType, proExpiry) {
+  if (planType === 'PRO') {
+    const exp = proExpiry ? ` · HH: ${formatDate(proExpiry)}` : '';
+    return `<span class="badge badge-plan-pro">🌟 PRO${exp}</span>`;
+  }
+  return `<span class="badge badge-plan-free">FREE</span>`;
 }
 
-function getFilteredUsers() {
-  const keyword = (document.getElementById('userSearchInput')?.value || '').trim().toLowerCase();
-  if (!keyword) return [...users];
-
-  return users.filter(user => {
-    return [user.fullName, user.username, user.email, user.phone, user.role, user.status, user.note]
-      .filter(Boolean)
-      .some(value => String(value).toLowerCase().includes(keyword));
-  });
+function buildStatusBadge(isActive) {
+  return isActive
+    ? `<span class="badge badge-status-active">🟢 Active</span>`
+    : `<span class="badge badge-status-locked">🔴 Locked</span>`;
 }
 
-function buildRoleBadge(role) {
-  const roleClassMap = {
-    Admin: 'badge-role-admin',
-    Editor: 'badge-role-editor',
-    Viewer: 'badge-role-viewer'
-  };
-  return `<span class="badge ${roleClassMap[role] || 'badge-role-viewer'}">${escapeHtml(role)}</span>`;
-}
-
-function buildStatusBadge(status) {
-  const isActive = status === 'active';
-  return `<span class="badge ${isActive ? 'badge-status-active' : 'badge-status-locked'}">${isActive ? 'Hoạt động' : 'Tạm khóa'}</span>`;
-}
-
-function formatUserDate(value, withTime = false) {
+function formatDate(value) {
   if (!value) return '--';
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return '--';
-  return date.toLocaleString('vi-VN', withTime ? {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit'
-  } : {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric'
-  });
+  const d = new Date(value);
+  if (isNaN(d)) return '--';
+  return d.toLocaleDateString('vi-VN');
+}
+
+function formatDateTime(value) {
+  if (!value) return '--';
+  const d = new Date(value);
+  if (isNaN(d)) return '--';
+  return d.toLocaleString('vi-VN', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' });
 }
 
 function escapeHtml(value) {
@@ -1520,216 +1790,278 @@ function escapeHtml(value) {
     .replace(/'/g, '&#39;');
 }
 
-// User management UI overrides
-function renderUsers() {
-  filteredUsers = getFilteredUsers();
-  const tbody = document.getElementById('tblUsers');
-  const emptyState = document.getElementById('usersEmptyState');
+function getUserInitials(name) {
+  return String(name || '').trim().split(/\s+/).filter(Boolean)
+    .slice(0, 2).map(w => w[0].toUpperCase()).join('') || 'U';
+}
 
-  updateUserSummary();
+// ── Device Management ─────────────────────────────────────────────
 
-  if (!filteredUsers.length) {
+let _locationMap = null;
+let _locationMarker = null;
+
+async function loadDevices() {
+  const res = await authFetch('/api/v1/admin/devices/realtime-snapshot');
+  if (!res) return;
+  const snapshot = await res.json();
+  applyDeviceSnapshot(snapshot);
+  renderDevicesTable();
+}
+
+function applyDeviceSnapshot(snapshot) {
+  _deviceMap = new Map();
+  const devices = Array.isArray(snapshot?.devices) ? snapshot.devices : [];
+  _devicePresenceSummary = {
+    onlineDevices: snapshot?.onlineDevices ?? snapshot?.onlineCount ?? null,
+    displayOnlineVisitors: snapshot?.displayOnlineVisitors ?? null
+  };
+  for (const item of devices) {
+    const dto = normalizeDeviceDto(item);
+    if (dto.deviceId) _deviceMap.set(dto.deviceId, dto);
+  }
+}
+
+function applyPresenceChangedEnvelope(envelope) {
+  const dto = normalizeDeviceDto(envelope?.data || {});
+  if (!dto.deviceId) return;
+  _devicePresenceSummary = {
+    onlineDevices: dto.onlineDevices ?? dto.onlineCount ?? _devicePresenceSummary.onlineDevices,
+    displayOnlineVisitors: dto.displayOnlineVisitors ?? _devicePresenceSummary.displayOnlineVisitors
+  };
+  _deviceMap.set(dto.deviceId, dto);
+}
+
+function normalizeDeviceDto(raw) {
+  return {
+    deviceId: raw.deviceId || '',
+    platform: raw.platform || null,
+    appVersion: raw.appVersion || null,
+    lastLatitude: raw.lastLatitude ?? null,
+    lastLongitude: raw.lastLongitude ?? null,
+    firstSeenAt: raw.firstSeenAt || null,
+    lastActiveAt: raw.lastActiveAt || null,
+    isOnline: !!raw.isOnline,
+    onlineCount: raw.onlineCount ?? null,
+    onlineDevices: raw.onlineDevices ?? raw.onlineCount ?? null,
+    displayOnlineVisitors: raw.displayOnlineVisitors ?? null
+  };
+}
+
+function renderDevicesTable() {
+  const devices = Array.from(_deviceMap.values())
+    .sort((a, b) => new Date(b.lastActiveAt || 0) - new Date(a.lastActiveAt || 0));
+
+  const online = devices.filter(d => d.isOnline).length;
+  const offline = devices.length - online;
+  document.getElementById('devStatTotal').textContent = devices.length;
+  document.getElementById('devStatOnline').textContent = _devicePresenceSummary.displayOnlineVisitors ?? online;
+  document.getElementById('devStatOffline').textContent = offline;
+
+  const tbody = document.getElementById('tblDevices');
+  const empty = document.getElementById('devicesEmptyState');
+  if (!devices.length) { tbody.innerHTML = ''; empty.style.display = 'block'; return; }
+  empty.style.display = 'none';
+
+  tbody.innerHTML = devices.map(d => `
+    <tr>
+      <td><code style="font-size:0.8rem;color:#90caf9;">${d.deviceId.slice(0,8)}…</code></td>
+      <td>${buildPlatformIcon(d.platform)} ${escapeHtml(d.platform || '—')}</td>
+      <td><span class="subtle-text">${escapeHtml(d.appVersion || '—')}</span></td>
+      <td><span class="subtle-text">${formatDateTime(d.lastActiveAt)}</span></td>
+      <td>${d.isOnline
+        ? '<span class="badge badge-status-active">🟢 Online</span>'
+        : '<span class="badge" style="background:rgba(80,80,80,.2);color:#aaa;">⚪ Offline</span>'}</td>
+      <td>${(d.lastLatitude && d.lastLongitude)
+        ? `<button class="btn btn-primary btn-sm" onclick="showLocation(${d.lastLatitude},${d.lastLongitude},'${escapeHtml(d.deviceId.slice(0,8))}')">🗺 Xem vị trí</button>`
+        : '<span class="subtle-text">Chưa có</span>'}</td>
+    </tr>`).join('');
+
+}
+
+async function initDevicesRealtime() {
+  if (!window.signalR || !token) return;
+  if (_deviceHubConn && _deviceHubConn.state !== 'Disconnected') return;
+
+  _deviceHubConn = new signalR.HubConnectionBuilder()
+    .withUrl('/hubs/device')
+    .withAutomaticReconnect()
+    .build();
+
+  _deviceHubConn.on(DEVICE_EVENT_V1, (envelope) => {
+    applyPresenceChangedEnvelope(envelope);
+    renderDevicesTable();
+    loadVisitorPoiRegions();
+  });
+
+  _deviceHubConn.on('DeviceStatusChanged', (dto) => {
+    applyPresenceChangedEnvelope({ data: dto });
+    renderDevicesTable();
+    loadVisitorPoiRegions();
+  });
+
+  _deviceHubConn.onreconnected(() => {
+    loadDevices();
+    loadVisitorPoiRegions();
+  });
+
+  try {
+    await _deviceHubConn.start();
+  } catch (e) {
+    console.error('Không thể kết nối device hub:', e);
+  }
+}
+
+async function loadVisitorPoiRegions() {
+  const res = await authFetch('/api/v1/admin/visitor-poi-regions');
+  if (!res) return;
+  const data = await res.json();
+  _visitorPoiRegions = Array.isArray(data?.items) ? data.items : [];
+  renderVisitorPoiRegions();
+}
+
+function renderVisitorPoiRegions() {
+  const tbody = document.getElementById('tblVisitorPoiRegions');
+  const empty = document.getElementById('visitorPoiEmptyState');
+  if (!tbody || !empty) return;
+
+  if (!_visitorPoiRegions.length) {
     tbody.innerHTML = '';
-    emptyState.style.display = 'block';
+    empty.style.display = 'block';
     return;
   }
 
-  emptyState.style.display = 'none';
-  tbody.innerHTML = filteredUsers.map(user => `
+  empty.style.display = 'none';
+  tbody.innerHTML = _visitorPoiRegions.map(x => `
     <tr>
       <td>
-        <div class="user-cell">
-          <div class="user-avatar">${getUserInitials(user.fullName)}</div>
-          <div class="user-name">
-            <strong>${escapeHtml(user.fullName)}</strong>
-            <span class="subtle-text">#${user.id} • Tạo ${formatUserDate(user.createdAt)}</span>
-          </div>
-        </div>
-      </td>
-      <td>
         <div class="user-name">
-          <strong>${escapeHtml(user.username)}</strong>
-          <span class="subtle-text">${escapeHtml(user.note || 'Không có ghi chú')}</span>
+          <strong>${escapeHtml(x.visitorName || 'Visitor')}</strong>
+          <span class="subtle-text">${escapeHtml((x.deviceId || '').slice(0, 8))}…</span>
         </div>
       </td>
-      <td>${buildRoleBadge(user.role)}</td>
-      <td>${buildStatusBadge(user.status)}</td>
+      <td><span class="subtle-text">${formatCoordinate(x.latitude)}, ${formatCoordinate(x.longitude)}</span></td>
       <td>
-        <div class="user-name">
-          <strong>${escapeHtml(user.email)}</strong>
-          <span class="subtle-text">${escapeHtml(user.phone || 'Chưa cập nhật số điện thoại')}</span>
-        </div>
+        <strong>${escapeHtml(x.nearestPoiName || '—')}</strong><br/>
+        <span class="subtle-text">${formatMeters(x.distanceToNearest)}</span>
       </td>
-      <td><span class="subtle-text">${formatUserDate(user.updatedAt, true)}</span></td>
       <td>
-        <div class="table-actions">
-          <button class="btn btn-primary btn-sm table-action-btn" onclick="openUserModal(${user.id})">Sửa</button>
-          <button class="btn ${user.status === 'active' ? 'btn-warn' : 'btn-primary'} btn-sm table-action-btn" onclick="toggleUserStatus(${user.id})">${user.status === 'active' ? 'Khóa' : 'Mở khóa'}</button>
-        </div>
+        <strong>${escapeHtml(x.secondPoiName || '—')}</strong><br/>
+        <span class="subtle-text">${formatMeters(x.distanceToSecond)}</span>
       </td>
-    </tr>
-  `).join('');
+      <td><span class="subtle-text">${formatDistancePair(x.distanceToNearest, x.distanceToSecond)}</span></td>
+      <td>${buildVisitorPoiRelationBadge(x.relation)}</td>
+    </tr>`).join('');
 }
 
-function updateUserSummary() {
-  const activeCount = users.filter(user => user.status === 'active').length;
-  const lockedCount = users.length - activeCount;
-  const adminCount = users.filter(user => user.role === 'Admin').length;
-  document.getElementById('usersTotalCount').textContent = String(users.length);
-  document.getElementById('usersActiveCount').textContent = String(activeCount);
-  document.getElementById('usersLockedCount').textContent = String(lockedCount);
-  document.getElementById('usersAdminCount').textContent = String(adminCount);
+function buildVisitorPoiRelationBadge(relation) {
+  if (relation === 'BETWEEN_2_POIS')
+    return '<span class="badge badge-plan-pro">Giữa 2 POI</span>';
+  if (relation === 'NEAR_SINGLE_POI')
+    return '<span class="badge badge-status-active">Gần 1 POI</span>';
+  return '<span class="badge" style="background:rgba(80,80,80,.2);color:#aaa;">Chưa có POI</span>';
 }
 
-function openUserModal(id = null) {
-  const modal = document.getElementById('userModal');
-  const title = document.getElementById('userModalTitle');
-  const user = id ? users.find(item => item.id === id) : null;
-
-  document.getElementById('userId').value = user?.id || '';
-  document.getElementById('userFullName').value = user?.fullName || '';
-  document.getElementById('userUsername').value = user?.username || '';
-  document.getElementById('userEmail').value = user?.email || '';
-  document.getElementById('userPhone').value = user?.phone || '';
-  document.getElementById('userRole').value = user?.role || 'Viewer';
-  document.getElementById('userStatus').value = user?.status || 'active';
-  document.getElementById('userStatusToggle').checked = (user?.status || 'active') === 'active';
-  document.getElementById('userNote').value = user?.note || '';
-  title.textContent = user ? `Chỉnh sửa người dùng #${user.id}` : 'Thêm người dùng';
-  resetUserValidation();
-  syncUserStatusLabel();
-  modal.classList.add('show');
+function formatMeters(value) {
+  return value == null ? '—' : `${Number(value).toFixed(1)} m`;
 }
 
-function closeUserModal() {
-  resetUserValidation();
-  document.getElementById('userModal').classList.remove('show');
+function formatDistancePair(first, second) {
+  if (first == null) return '—';
+  if (second == null) return `${Number(first).toFixed(1)} m`;
+  return `${Number(first).toFixed(1)} m / ${Number(second).toFixed(1)} m`;
 }
 
-function handleUserModalBackdrop(event) {
-  if (event.target.id === 'userModal') closeUserModal();
+function formatCoordinate(value) {
+  return value == null ? '—' : Number(value).toFixed(6);
 }
 
-function saveUser() {
-  const id = parseInt(document.getElementById('userId').value, 10);
-  const fullName = document.getElementById('userFullName').value.trim();
-  const username = document.getElementById('userUsername').value.trim();
-  const email = document.getElementById('userEmail').value.trim();
-  const phone = document.getElementById('userPhone').value.trim();
-  const role = document.getElementById('userRole').value;
-  const status = document.getElementById('userStatus').value;
-  const note = document.getElementById('userNote').value.trim();
+async function loadAudioQueues() {
+  const res = await authFetch('/api/v1/admin/audio-queues');
+  if (!res) return;
+  const data = await res.json();
+  _audioQueues = Array.isArray(data?.groups) ? data.groups : [];
+  renderAudioQueues();
+  clearTimeout(_audioQueueRefreshTimer);
+  if (currentSection === 'secDevices')
+    _audioQueueRefreshTimer = setTimeout(loadAudioQueues, 10000);
+}
 
-  resetUserValidation();
+function renderAudioQueues() {
+  const wrap = document.getElementById('audioQueueGroups');
+  const empty = document.getElementById('audioQueueEmptyState');
+  if (!wrap || !empty) return;
 
-  let hasError = false;
-  if (!fullName) {
-    setFieldError('userFullName', 'userFullNameError', 'Vui lòng nhập họ tên người dùng.');
-    hasError = true;
-  }
-  if (!email) {
-    setFieldError('userEmail', 'userEmailError', 'Vui lòng nhập email liên hệ.');
-    hasError = true;
-  }
-  if (hasError) {
-    toast('Vui lòng kiểm tra lại các trường bắt buộc', true);
-    return;
-  }
-  if (!username) {
-    toast('Tên đăng nhập là bắt buộc', true);
+  if (!_audioQueues.length) {
+    wrap.innerHTML = '';
+    empty.style.display = 'block';
     return;
   }
 
-  const duplicateUser = users.find(user =>
-    user.id !== id &&
-    (user.username.toLowerCase() === username.toLowerCase() || user.email.toLowerCase() === email.toLowerCase())
-  );
-  if (duplicateUser) {
-    toast('Tên đăng nhập hoặc email đã tồn tại trong mock data', true);
-    return;
-  }
-
-  const now = new Date().toISOString();
-  if (id) {
-    users = users.map(user => user.id === id ? {
-      ...user,
-      fullName,
-      username,
-      email,
-      phone,
-      role,
-      status,
-      note,
-      updatedAt: now
-    } : user);
-    toast(`Đã cập nhật người dùng #${id}`);
-  } else {
-    const nextId = users.length ? Math.max(...users.map(user => user.id)) + 1 : 1;
-    users.unshift({
-      id: nextId,
-      fullName,
-      username,
-      email,
-      phone,
-      role,
-      status,
-      note,
-      createdAt: now,
-      updatedAt: now
-    });
-    toast('Đã thêm người dùng mới');
-  }
-
-  persistUsers();
-  closeUserModal();
-  filterUsers();
+  empty.style.display = 'none';
+  wrap.innerHTML = _audioQueues.map(group => `
+    <div style="border:1px solid #333;border-radius:8px;padding:12px;margin-top:12px;background:rgba(255,255,255,.02);">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px;flex-wrap:wrap;">
+        <div>
+          <strong>${escapeHtml(group.poiName || 'POI')}</strong>
+          <span class="subtle-text">#${group.poiId}</span>
+        </div>
+        <span class="badge badge-status-active">${group.activeListeners || 0} đang nghe</span>
+      </div>
+      <div class="table-wrap">
+        <table class="users-table">
+          <thead>
+            <tr>
+              <th>Queue</th>
+              <th>Visitor</th>
+              <th>Bắt đầu nghe</th>
+              <th>Trạng thái</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${(group.queue || []).map(item => `
+              <tr>
+                <td><strong>#${item.queueNumber}</strong></td>
+                <td>
+                  <div class="user-name">
+                    <strong>${escapeHtml(item.visitorLabel || 'Visitor')}</strong>
+                    <span class="subtle-text">${escapeHtml((item.deviceId || '').slice(0, 8))}…</span>
+                  </div>
+                </td>
+                <td><span class="subtle-text">${formatDateTime(item.startedAt)}</span></td>
+                <td><span class="badge badge-status-active">${escapeHtml(item.status || 'ACTIVE')}</span></td>
+              </tr>`).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>`).join('');
 }
 
-function toggleUserStatus(id) {
-  const target = users.find(user => user.id === id);
-  if (!target) return;
-
-  const nextStatus = target.status === 'active' ? 'locked' : 'active';
-  target.status = nextStatus;
-  target.updatedAt = new Date().toISOString();
-  persistUsers();
-  renderUsers();
-  toast(nextStatus === 'active' ? `Đã mở khóa user #${id}` : `Đã khóa user #${id}`);
+function buildPlatformIcon(platform) {
+  if (!platform) return '';
+  const p = platform.toLowerCase();
+  if (p.includes('android')) return '🤖';
+  if (p.includes('ios')) return '🍏';
+  return '💻';
 }
 
-function filterUsers() {
-  renderUsers();
+function showLocation(lat, lng, label) {
+  document.getElementById('locationPopup').classList.add('show');
+  document.getElementById('locationPopupTitle').textContent = `Vị trí thiết bị: ${label}…`;
+  setTimeout(() => {
+    if (!_locationMap) {
+      _locationMap = L.map('locationMap').setView([lat, lng], 15);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OSM' }).addTo(_locationMap);
+      _locationMarker = L.marker([lat, lng]).addTo(_locationMap);
+    } else {
+      _locationMap.setView([lat, lng], 15);
+      _locationMarker.setLatLng([lat, lng]);
+    }
+    _locationMap.invalidateSize();
+  }, 100);
 }
 
-function syncUserStatusLabel() {
-  const isActive = document.getElementById('userStatusToggle').checked;
-  document.getElementById('userStatus').value = isActive ? 'active' : 'locked';
-  document.getElementById('userStatusLabel').textContent = isActive ? 'Đang hoạt động' : 'Tạm khóa';
-}
-
-function resetUserValidation() {
-  ['userFullName', 'userEmail'].forEach(id => document.getElementById(id).classList.remove('field-invalid'));
-  ['userFullNameError', 'userEmailError'].forEach(id => document.getElementById(id).textContent = '');
-}
-
-function setFieldError(fieldId, errorId, message) {
-  document.getElementById(fieldId).classList.add('field-invalid');
-  document.getElementById(errorId).textContent = message;
-}
-
-function buildStatusBadge(status) {
-  const isActive = status === 'active';
-  return `<span class="badge ${isActive ? 'badge-status-active' : 'badge-status-locked'}">${isActive ? 'Hoạt động' : 'Tạm khóa'}</span>`;
-}
-
-function getUserInitials(fullName) {
-  return String(fullName || '')
-    .trim()
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map(word => word.charAt(0).toUpperCase())
-    .join('') || 'U';
+function closeLocationPopup() {
+  document.getElementById('locationPopup').classList.remove('show');
 }
 
 // ── Helpers ───────────────────────────────────────────────────────
@@ -1795,62 +2127,137 @@ async function loadHeatmap() {
   if (heatLayer) leafletMap.removeLayer(heatLayer);
   heatLayer = L.heatLayer(heatPoints, { radius: 20, blur: 15, maxZoom: 17 }).addTo(leafletMap);
 }
-    // ── QR Code Generator ───────────────────────────────────────────────
-    let qrInstance;
+// ── QR Hub ────────────────────────────────────────────────────────
+let _qrPreviewDataUrl = '';
+let _qrPreviewFileName = 'qr-code.png';
 
-    async function loadPoiForQr() {
-        const res = await authFetch('/api/v1/admin/pois');
-        if (!res) return;
-        const pois = await res.json();
-        const select = document.getElementById('qrPoiSelect');
-        select.innerHTML = pois.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
-    }
-    async function createLimitedQr() {
-        const poiId = document.getElementById('qrPoiSelect').value;
-        const lang = document.getElementById('qrLangSelect').value;
+function showQrHubTab(tab) {
+  const isNarration = tab === 'narration';
+  document.getElementById('tabQrNarration').classList.toggle('active', isNarration);
+  document.getElementById('tabQrDistribution').classList.toggle('active', !isNarration);
+  document.getElementById('qrPanelNarration').classList.toggle('active', isNarration);
+  document.getElementById('qrPanelDistribution').classList.toggle('active', !isNarration);
+}
 
-        toast("Đang tạo QR...", false); // Hiện thông báo đang xử lý
+async function loadPoiForQr() {
+  const [poiRes, langRes] = await Promise.all([
+    authFetch('/api/v1/admin/pois'),
+    authFetch('/api/v1/languages')
+  ]);
+  if (!poiRes || !langRes) return;
 
-        try {
-            const res = await authFetch('/api/v1/tickets/generate', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ poiId: parseInt(poiId), language: lang, maxUses: 5 })
-            });
+  const pois = await poiRes.json();
+  const langs = await langRes.json();
+  document.getElementById('qrPoiSelect').innerHTML =
+    (pois || []).map(p => `<option value="${p.id}">${escapeHtml(p.name)}</option>`).join('');
+  document.getElementById('qrLangSelect').innerHTML =
+    (langs || []).map(l => `<option value="${l.languageTag}">${escapeHtml(l.languageName)} (${l.languageTag})</option>`).join('');
+  loadQrHistory();
+}
 
-            // NÂNG CẤP: Kiểm tra nếu Backend báo lỗi 404 hoặc 500
-            if (!res || !res.ok) {
-                toast("Lỗi Server! Chưa có API hoặc lỗi Database.", true);
-                return;
-            }
+async function createNarrationQr() {
+  const poiId = parseInt(document.getElementById('qrPoiSelect').value, 10);
+  const languageTag = document.getElementById('qrLangSelect').value;
+  const maxUses = parseInt(document.getElementById('qrMaxUses').value, 10) || 5;
 
-            const data = await res.json();
-            const ticketCode = data.ticketCode;
-            const qrContent = JSON.stringify({ ticket_id: ticketCode });
-            const canvas = document.getElementById('qrCanvas');
+  const res = await authFetch('/api/v1/admin/qr/narration', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ poiId, languageTag, maxUses })
+  });
+  if (!res || !res.ok) {
+    toast('Không thể tạo QR thuyết minh', true);
+    return;
+  }
 
-            if (!qrInstance) {
-                qrInstance = new QRious({ element: canvas, size: 250, background: 'white', foreground: 'black' });
-            }
-            qrInstance.value = qrContent;
+  const data = await res.json();
+  _qrPreviewDataUrl = `data:image/png;base64,${data.qrImageBase64 || ''}`;
+  _qrPreviewFileName = `narration_${data.ticketCode || 'ticket'}.png`;
 
-            document.getElementById('qrTicketInfo').textContent = `Mã vé: ${ticketCode}`;
-            document.getElementById('qrResult').style.display = 'block';
-            document.getElementById('btnDownloadQr').style.display = 'block';
-            toast('Tạo QR thành công!');
-        } catch (error) {
-            console.error("Lỗi JS:", error);
-            toast("Lỗi xử lý hệ thống!", true);
-        }
-    }
-    function downloadQr() {
-        const canvas = document.getElementById('qrCanvas');
-        const image = canvas.toDataURL("image/png").replace("image/png", "image/octet-stream");
-        const link = document.createElement('a');
-        link.download = `QR_POI_${document.getElementById('qrPoiSelect').value}_${document.getElementById('qrLangSelect').value}.png`;
-        link.href = image;
-        link.click();
-    }
+  document.getElementById('qrPreviewImage').src = _qrPreviewDataUrl;
+  document.getElementById('qrPreviewInfo').textContent = `Ticket: ${data.ticketCode || '--'}`;
+  document.getElementById('qrPreview').style.display = 'block';
+  toast('Đã tạo QR thuyết minh');
+  loadQrHistory();
+}
+
+async function createDistributionQr() {
+  const locationName = document.getElementById('distLocationName').value.trim();
+  const campaignCode = document.getElementById('distCampaignCode').value.trim();
+  if (!locationName) {
+    toast('Vui lòng nhập vị trí đặt mã', true);
+    return;
+  }
+
+  const res = await authFetch('/api/v1/admin/qr/distribution', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ locationName, campaignCode: campaignCode || null })
+  });
+  if (!res || !res.ok) {
+    toast('Không thể tạo QR tải app', true);
+    return;
+  }
+
+  const data = await res.json();
+  _qrPreviewDataUrl = `data:image/png;base64,${data.qrImageBase64 || ''}`;
+  _qrPreviewFileName = `distribution_${data.sourceId || 'source'}.png`;
+
+  document.getElementById('qrPreviewImage').src = _qrPreviewDataUrl;
+  document.getElementById('qrPreviewInfo').textContent = `SourceId: ${data.sourceId || '--'} | Link: ${data.smartLink || ''}`;
+  document.getElementById('qrPreview').style.display = 'block';
+  toast('Đã tạo QR tải app');
+  loadQrHistory();
+}
+
+function downloadQrPreview() {
+  if (!_qrPreviewDataUrl) {
+    toast('Chưa có ảnh QR để tải', true);
+    return;
+  }
+  const link = document.createElement('a');
+  link.href = _qrPreviewDataUrl;
+  link.download = _qrPreviewFileName;
+  link.click();
+}
+
+async function loadQrHistory() {
+  const res = await authFetch('/api/v1/admin/qr/history');
+  if (!res || !res.ok) return;
+  const data = await res.json();
+  const narration = Array.isArray(data.narration) ? data.narration : [];
+  const distribution = Array.isArray(data.distribution) ? data.distribution : [];
+
+  const rows = [
+    ...narration.map(x => ({
+      type: 'Thuyết minh',
+      code: x.code || '--',
+      info: `POI ${x.poiId} | ${x.languageTag} | ${x.currentUses}/${x.maxUses}`,
+      createdAt: x.createdAt
+    })),
+    ...distribution.map(x => ({
+      type: 'Tải app',
+      code: `SRC-${x.sourceId}`,
+      info: `${x.locationName || '--'}${x.campaignCode ? ' | ' + x.campaignCode : ''}`,
+      createdAt: x.createdAt
+    }))
+  ].sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+
+  const tbody = document.getElementById('tblQrHistory');
+  if (!rows.length) {
+    tbody.innerHTML = `<tr><td colspan="4" class="subtle-text">Chưa có dữ liệu QR.</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = rows.slice(0, 200).map(r => `
+    <tr>
+      <td>${escapeHtml(r.type)}</td>
+      <td><span class="badge-on">${escapeHtml(r.code)}</span></td>
+      <td>${escapeHtml(r.info)}</td>
+      <td>${formatDateTime(r.createdAt)}</td>
+    </tr>
+  `).join('');
+}
 // ── Boot ──────────────────────────────────────────────────────────
 if (token) startApp();
 </script>
